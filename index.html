@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central de Produção — TVPS & ALM</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --white: #ffffff;
+    --surface2: #eef1f8;
+    --border: #dde3f0;
+    --border-strong: #c5cfe8;
+    --blue-900: #0f2a5e;
+    --blue-800: #153580;
+    --blue-700: #1a44a8;
+    --blue-600: #1d54d4;
+    --blue-500: #2563eb;
+    --blue-400: #3b82f6;
+    --blue-300: #93c5fd;
+    --blue-100: #dbeafe;
+    --blue-50:  #eff6ff;
+    --text: #0f1c3a;
+    --text-2: #374263;
+    --muted: #7a88b0;
+    --muted-light: #a8b4d0;
+    --green: #15803d;
+    --green-bg: #dcfce7;
+    --yellow: #92400e;
+    --yellow-bg: #fef3c7;
+    --red: #991b1b;
+    --red-bg: #fee2e2;
+    --shadow-sm: 0 1px 3px rgba(15,42,94,0.06), 0 1px 2px rgba(15,42,94,0.04);
+    --shadow: 0 4px 16px rgba(15,42,94,0.08), 0 1px 4px rgba(15,42,94,0.05);
+    --shadow-lg: 0 12px 40px rgba(15,42,94,0.12);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar { position:fixed; top:0; left:0; bottom:0; width:240px; background:var(--blue-900); display:flex; flex-direction:column; z-index:200; box-shadow:4px 0 24px rgba(15,42,94,0.18); }
+  .sidebar-logo { padding:28px 24px 24px; border-bottom:1px solid rgba(255,255,255,0.08); }
+  .logo-mark { width:40px; height:40px; background:var(--blue-500); border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; font-size:18px; }
+  .logo-name { font-family:'Playfair Display',serif; font-size:16px; font-weight:700; color:#fff; line-height:1.2; letter-spacing:-0.01em; }
+  .logo-sub { font-size:10px; color:var(--blue-300); font-family:'IBM Plex Mono',monospace; letter-spacing:0.1em; text-transform:uppercase; margin-top:3px; }
+  .sidebar-section { padding:20px 16px 8px; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(147,197,253,0.45); }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:10px 16px; margin:2px 8px; border-radius:8px; cursor:pointer; transition:all .18s; font-size:13px; font-weight:500; color:rgba(255,255,255,0.6); text-decoration:none; }
+  .nav-item:hover { background:rgba(255,255,255,0.07); color:#fff; }
+  .nav-item.active { background:var(--blue-600); color:#fff; font-weight:600; }
+  .nav-icon { width:28px; height:28px; border-radius:6px; background:rgba(255,255,255,0.07); display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+  .nav-item.active .nav-icon { background:rgba(255,255,255,0.15); }
+  .nav-badge { margin-left:auto; background:var(--blue-500); color:white; font-size:10px; font-weight:600; padding:1px 7px; border-radius:99px; font-family:'IBM Plex Mono',monospace; }
+  .sidebar-divider { height:1px; background:rgba(255,255,255,0.07); margin:12px 16px; }
+  .sidebar-bottom { margin-top:auto; padding:16px; border-top:1px solid rgba(255,255,255,0.07); }
+  .division-toggle { background:rgba(255,255,255,0.06); border-radius:10px; padding:4px; display:flex; gap:4px; }
+  .div-btn { flex:1; padding:7px; border-radius:7px; font-size:11px; font-weight:600; cursor:pointer; border:none; background:none; color:rgba(255,255,255,0.45); transition:all .18s; font-family:'IBM Plex Mono',monospace; letter-spacing:.04em; }
+  .div-btn.active { background:var(--blue-600); color:white; }
+
+  /* ─── LAYOUT ─── */
+  .wrapper { margin-left:240px; min-height:100vh; display:flex; flex-direction:column; }
+  .topbar { background:var(--white); border-bottom:1px solid var(--border); padding:0 40px; height:64px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:var(--shadow-sm); }
+  .page-title { font-family:'Playfair Display',serif; font-size:20px; font-weight:600; color:var(--blue-900); letter-spacing:-0.02em; }
+  .page-title span { font-family:'Inter',sans-serif; font-size:13px; font-weight:400; color:var(--muted); margin-left:12px; }
+  .topbar-right { display:flex; align-items:center; gap:12px; }
+  .date-pill { background:var(--blue-50); border:1px solid var(--blue-100); color:var(--blue-700); font-family:'IBM Plex Mono',monospace; font-size:11px; padding:6px 14px; border-radius:20px; font-weight:500; }
+  .btn-primary { background:var(--blue-600); color:white; border:none; padding:9px 18px; border-radius:8px; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .18s; display:flex; align-items:center; gap:7px; letter-spacing:-0.01em; }
+  .btn-primary:hover { background:var(--blue-700); box-shadow:0 4px 12px rgba(37,99,235,.3); }
+  main { padding:32px 40px; flex:1; }
+
+  /* ─── SECTION HEADER ─── */
+  .section-header { font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .section-header::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* ─── QUICK LINKS ─── */
+  .quick-links { display:flex; gap:12px; margin-bottom:36px; flex-wrap:wrap; }
+  .quick-btn { display:flex; align-items:center; gap:12px; padding:14px 18px; border-radius:12px; border:1px solid var(--border); background:var(--white); color:var(--text); font-size:13px; font-weight:500; cursor:pointer; text-decoration:none; transition:all .18s; box-shadow:var(--shadow-sm); }
+  .quick-btn:hover { border-color:var(--blue-400); box-shadow:0 4px 16px rgba(37,99,235,.12); transform:translateY(-1px); }
+  .qicon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .qbtn-label { font-size:13px; font-weight:600; color:var(--text); }
+  .qbtn-sub { font-size:11px; color:var(--muted); margin-top:1px; }
+
+  /* ─── STATS ─── */
+  .stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:32px; }
+  .stat-card { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:22px 20px; box-shadow:var(--shadow-sm); position:relative; overflow:hidden; transition:box-shadow .2s; }
+  .stat-card:hover { box-shadow:var(--shadow); }
+  .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:14px 14px 0 0; }
+  .stat-card.blue::before   { background:var(--blue-500); }
+  .stat-card.green::before  { background:#22c55e; }
+  .stat-card.yellow::before { background:#f59e0b; }
+  .stat-card.red::before    { background:#ef4444; }
+  .stat-card.indigo::before { background:#6366f1; }
+  .stat-icon { font-size:18px; margin-bottom:10px; display:block; }
+  .stat-number { font-family:'Playfair Display',serif; font-size:40px; font-weight:700; line-height:1; margin-bottom:5px; letter-spacing:-0.02em; }
+  .stat-card.blue   .stat-number { color:var(--blue-600); }
+  .stat-card.green  .stat-number { color:#16a34a; }
+  .stat-card.yellow .stat-number { color:#d97706; }
+  .stat-card.red    .stat-number { color:#dc2626; }
+  .stat-card.indigo .stat-number { color:#4f46e5; }
+  .stat-label { font-size:12px; color:var(--muted); line-height:1.5; }
+
+  /* ─── GRID ─── */
+  .grid-main { display:grid; grid-template-columns:1fr 340px; gap:24px; margin-bottom:24px; }
+  .card { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:24px; box-shadow:var(--shadow-sm); }
+  .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+  .card-title { font-family:'Playfair Display',serif; font-size:16px; font-weight:600; color:var(--blue-900); letter-spacing:-0.02em; }
+  .badge { font-family:'IBM Plex Mono',monospace; font-size:10px; padding:3px 10px; border-radius:99px; font-weight:500; letter-spacing:.04em; }
+  .badge-blue   { background:var(--blue-50);  color:var(--blue-700); border:1px solid var(--blue-100); }
+  .badge-green  { background:var(--green-bg); color:var(--green);    border:1px solid #bbf7d0; }
+  .badge-yellow { background:var(--yellow-bg);color:var(--yellow);   border:1px solid #fde68a; }
+  .badge-red    { background:var(--red-bg);   color:var(--red);      border:1px solid #fecaca; }
+
+  /* ─── TABLE ─── */
+  .ep-table { width:100%; border-collapse:collapse; }
+  .ep-table th { font-family:'IBM Plex Mono',monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); text-align:left; padding:0 14px 10px 0; font-weight:500; }
+  .ep-table td { padding:11px 14px 11px 0; font-size:13px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .ep-table tr:last-child td { border-bottom:none; }
+  .ep-table tbody tr:hover td { background:var(--blue-50); }
+  .ep-name { font-weight:600; font-size:13px; color:var(--blue-900); }
+  .ep-code { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); margin-top:1px; }
+  .check { width:24px; height:24px; border-radius:6px; border:1.5px solid var(--border-strong); display:flex; align-items:center; justify-content:center; font-size:11px; cursor:pointer; transition:all .15s; flex-shrink:0; }
+  .check.done { background:var(--green-bg); border-color:#86efac; color:var(--green); }
+  .check.pend { background:var(--yellow-bg); border-color:#fde68a; color:var(--yellow); }
+  .check.none { background:var(--surface2); border-color:var(--border); color:transparent; }
+  .responsible { display:flex; align-items:center; gap:8px; }
+  .avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; border:2px solid var(--white); box-shadow:0 0 0 1.5px var(--border); }
+  .av1 { background:#dbeafe; color:var(--blue-700); }
+  .av2 { background:#e0e7ff; color:#4338ca; }
+  .av3 { background:#d1fae5; color:#065f46; }
+  .av4 { background:#fce7f3; color:#9d174d; }
+  .air-date { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); font-weight:500; }
+  .air-date.soon { color:var(--blue-600); font-weight:600; }
+  .air-date.tbd  { color:var(--muted-light); font-style:italic; }
+
+  /* ─── SIDE ─── */
+  .side-col { display:flex; flex-direction:column; gap:20px; }
+
+  /* ─── CALENDAR ─── */
+  .calendar-strip { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .cal-day { background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:8px 4px; text-align:center; }
+  .cal-day .day-name { font-family:'IBM Plex Mono',monospace; color:var(--muted); font-size:8px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:3px; }
+  .cal-day .day-num { font-family:'Playfair Display',serif; font-size:17px; font-weight:600; line-height:1; color:var(--text-2); }
+  .cal-day.today { background:var(--blue-600); border-color:var(--blue-600); }
+  .cal-day.today .day-name { color:rgba(255,255,255,.7); }
+  .cal-day.today .day-num  { color:#fff; }
+  .cal-dot { width:5px; height:5px; border-radius:50%; margin:4px auto 0; }
+  .dot-record { background:#f97316; }
+  .dot-air    { background:var(--blue-500); }
+  .dot-edit   { background:#8b5cf6; }
+  .cal-legend { display:flex; gap:12px; margin-top:10px; flex-wrap:wrap; }
+  .legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--muted); font-family:'IBM Plex Mono',monospace; }
+  .legend-dot { width:7px; height:7px; border-radius:50%; }
+
+  /* ─── UPLOAD ─── */
+  .upload-zone { border:2px dashed var(--border-strong); border-radius:10px; padding:20px; text-align:center; cursor:pointer; transition:all .18s; background:var(--blue-50); }
+  .upload-zone:hover { border-color:var(--blue-400); background:#e0eaff; }
+  .upload-icon { font-size:24px; margin-bottom:6px; }
+  .upload-text { font-size:12px; color:var(--muted); line-height:1.5; }
+  .upload-text strong { color:var(--blue-600); }
+
+  /* ─── PIPELINE ─── */
+  .pipeline { display:flex; align-items:flex-start; }
+  .pipe-step { flex:1; text-align:center; position:relative; }
+  .pipe-step::after { content:''; position:absolute; top:17px; right:-50%; width:100%; height:2px; background:var(--border); z-index:0; }
+  .pipe-step:last-child::after { display:none; }
+  .pipe-dot { width:34px; height:34px; border-radius:50%; border:2px solid var(--border); margin:0 auto 8px; display:flex; align-items:center; justify-content:center; font-size:13px; position:relative; z-index:1; background:var(--white); transition:all .2s; }
+  .pipe-dot.done  { background:var(--green-bg); border-color:#86efac; color:var(--green); }
+  .pipe-dot.active{ background:var(--blue-50);  border-color:var(--blue-400); color:var(--blue-600); box-shadow:0 0 0 4px rgba(37,99,235,.1); }
+  .pipe-dot.empty { background:var(--surface2); border-color:var(--border); color:transparent; }
+  .pipe-label { font-size:10px; color:var(--muted); font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.06em; line-height:1.3; }
+  .prog-bar { height:5px; background:var(--surface2); border-radius:99px; overflow:hidden; margin-top:6px; }
+  .prog-fill { height:100%; border-radius:99px; background:var(--blue-500); }
+
+  /* ─── MODAL ─── */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(15,42,94,.5); backdrop-filter:blur(6px); z-index:1000; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--white); border:1px solid var(--border); border-radius:18px; padding:36px; width:520px; max-width:94vw; box-shadow:var(--shadow-lg); animation:fadeUp .25s ease; }
+  .modal-title { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:var(--blue-900); margin-bottom:6px; letter-spacing:-0.02em; }
+  .modal-sub { font-size:13px; color:var(--muted); margin-bottom:24px; }
+  .form-group { margin-bottom:14px; }
+  .form-label { display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin-bottom:5px; font-weight:500; }
+  .form-input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; color:var(--text); font-family:'Inter',sans-serif; font-size:13px; outline:none; transition:border-color .18s, box-shadow .18s; }
+  .form-input:focus { border-color:var(--blue-400); box-shadow:0 0 0 3px rgba(37,99,235,.08); background:white; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .modal-actions { display:flex; gap:10px; margin-top:24px; justify-content:flex-end; }
+  .btn-cancel { background:none; border:1px solid var(--border); color:var(--muted); padding:10px 20px; border-radius:8px; font-family:'Inter',sans-serif; font-size:13px; cursor:pointer; transition:all .18s; font-weight:500; }
+  .btn-cancel:hover { border-color:var(--blue-300); color:var(--text); }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+  .card,.stat-card { animation:fadeUp .35s ease both; }
+  .stat-card:nth-child(1){animation-delay:.04s} .stat-card:nth-child(2){animation-delay:.08s} .stat-card:nth-child(3){animation-delay:.12s} .stat-card:nth-child(4){animation-delay:.16s} .stat-card:nth-child(5){animation-delay:.20s}
+  ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:99px}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">📡</div>
+    <div class="logo-name">Central de Produção</div>
+    <div class="logo-sub">Editorial · Broadcast</div>
+  </div>
+
+  <div class="sidebar-section">Navegação</div>
+  <a class="nav-item active" href="#"><div class="nav-icon">📊</div>Dashboard<span class="nav-badge">12</span></a>
+  <a class="nav-item" href="#"><div class="nav-icon">🎬</div>Episódios</a>
+  <a class="nav-item" href="#"><div class="nav-icon">📅</div>Calendário</a>
+  <a class="nav-item" href="#"><div class="nav-icon">📤</div>Upload / Matérias</a>
+
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section">Links externos</div>
+  <a class="nav-item" href="#" onclick="openLink('onedrive')"><div class="nav-icon">☁️</div>OneDrive</a>
+  <a class="nav-item" href="#" onclick="openLink('bucket')"><div class="nav-icon">🪣</div>Bucket</a>
+  <a class="nav-item" href="#" onclick="openLink('metadata')"><div class="nav-icon">🏷️</div>Metadados</a>
+  <a class="nav-item" href="#" onclick="openLink('sharepoint')"><div class="nav-icon">📂</div>SharePoint</a>
+
+  <div class="sidebar-bottom">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:rgba(147,197,253,.45);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Divisão ativa</div>
+    <div class="division-toggle">
+      <button class="div-btn active" onclick="switchTab('tvps',this)">TVPS</button>
+      <button class="div-btn" onclick="switchTab('alm',this)">ALM</button>
+    </div>
+  </div>
+</div>
+
+<!-- WRAPPER -->
+<div class="wrapper">
+  <div class="topbar">
+    <div>
+      <span class="page-title">Dashboard <span id="division-label">· TVPS Fast Channel</span></span>
+    </div>
+    <div class="topbar-right">
+      <div class="date-pill" id="current-date"></div>
+      <button class="btn-primary" onclick="openModal()"><span>＋</span> Novo episódio</button>
+    </div>
+  </div>
+
+  <main>
+    <!-- QUICK LINKS -->
+    <div class="section-header">Acesso rápido</div>
+    <div class="quick-links">
+      <a href="#" class="quick-btn" onclick="openLink('onedrive')">
+        <div class="qicon" style="background:#eff6ff">☁️</div>
+        <div><div class="qbtn-label">Matérias · OneDrive</div><div class="qbtn-sub">Arquivos brutos dos programas</div></div>
+      </a>
+      <a href="#" class="quick-btn" onclick="openLink('bucket')">
+        <div class="qicon" style="background:#eef2ff">🪣</div>
+        <div><div class="qbtn-label">Bucket · Distribuidora</div><div class="qbtn-sub">App dos canais fast</div></div>
+      </a>
+      <a href="#" class="quick-btn" onclick="openLink('metadata')">
+        <div class="qicon" style="background:#e0f2fe">🏷️</div>
+        <div><div class="qbtn-label">Metadados · Sistema</div><div class="qbtn-sub">Atualizar info dos episódios</div></div>
+      </a>
+      <a href="#" class="quick-btn" onclick="openLink('calendar')">
+        <div class="qicon" style="background:#d1fae5">📅</div>
+        <div><div class="qbtn-label">Calendário editorial</div><div class="qbtn-sub">Gravações & exibições</div></div>
+      </a>
+      <a href="#" class="quick-btn" onclick="openLink('sharepoint')">
+        <div class="qicon" style="background:#f5f3ff">📂</div>
+        <div><div class="qbtn-label">SharePoint · Equipe</div><div class="qbtn-sub">Biblioteca de arquivos</div></div>
+      </a>
+    </div>
+
+    <!-- STATS -->
+    <div class="section-header">Visão geral</div>
+    <div class="stats-row">
+      <div class="stat-card blue"><span class="stat-icon">🎬</span><div class="stat-number">12</div><div class="stat-label">Episódios em produção</div></div>
+      <div class="stat-card green"><span class="stat-icon">✅</span><div class="stat-number">7</div><div class="stat-label">Prontos no Bucket</div></div>
+      <div class="stat-card yellow"><span class="stat-icon">⏳</span><div class="stat-number">3</div><div class="stat-label">Aguardando conversão</div></div>
+      <div class="stat-card red"><span class="stat-icon">🏷️</span><div class="stat-number">2</div><div class="stat-label">Metadados pendentes</div></div>
+      <div class="stat-card indigo"><span class="stat-icon">📅</span><div class="stat-number">4</div><div class="stat-label">Gravações agendadas</div></div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="grid-main">
+      <div>
+        <!-- EPISODES -->
+        <div class="card" style="margin-bottom:24px">
+          <div class="card-header">
+            <div class="card-title">Controle de Episódios</div>
+            <button class="btn-primary" style="padding:7px 14px;font-size:12px" onclick="openModal()">＋ Novo</button>
+          </div>
+          <table class="ep-table">
+            <thead>
+              <tr>
+                <th style="width:180px">Programa / Ep.</th>
+                <th>Responsável</th>
+                <th title="Conversão">Conv.</th>
+                <th title="Bucket">Bucket</th>
+                <th title="Metadados">Meta.</th>
+                <th>Vai ao ar</th>
+                <th>Próx. gravação</th>
+              </tr>
+            </thead>
+            <tbody id="ep-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- PIPELINE -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Pipeline de Entrega</div>
+            <span class="badge badge-yellow">Em andamento</span>
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:20px">
+            <strong style="color:var(--blue-900)">Saúde em Pauta — Ep. 47</strong>
+            &nbsp;·&nbsp; Responsável: <span style="color:var(--blue-600);font-weight:600">Carla M.</span>
+          </div>
+          <div class="pipeline">
+            <div class="pipe-step"><div class="pipe-dot done">✓</div><div class="pipe-label">Gravação</div></div>
+            <div class="pipe-step"><div class="pipe-dot done">✓</div><div class="pipe-label">Edição</div></div>
+            <div class="pipe-step"><div class="pipe-dot done">✓</div><div class="pipe-label">Conversão</div></div>
+            <div class="pipe-step"><div class="pipe-dot active">⬆</div><div class="pipe-label">Bucket</div></div>
+            <div class="pipe-step"><div class="pipe-dot empty"></div><div class="pipe-label">Metadados</div></div>
+            <div class="pipe-step"><div class="pipe-dot empty"></div><div class="pipe-label">No ar</div></div>
+          </div>
+          <div style="margin-top:18px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase">Progresso</span>
+              <span style="color:var(--blue-600);font-weight:600">66%</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill" style="width:66%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIDE COLUMN -->
+      <div class="side-col">
+        <!-- CALENDAR -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Esta semana</div>
+            <span class="badge badge-blue" id="month-label"></span>
+          </div>
+          <div class="calendar-strip" id="cal-strip"></div>
+          <div class="cal-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>Gravação</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--blue-500)"></div>Exibição</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>Edição</div>
+          </div>
+        </div>
+
+        <!-- UPLOAD -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Upload rápido</div>
+            <span class="badge badge-blue">OneDrive</span>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Destino: <strong style="color:var(--blue-800);font-family:'IBM Plex Mono',monospace">/Matérias/TVPS/</strong></div>
+          <div class="upload-zone" onclick="alert('Integrar com o SharePoint File Picker ou OneDrive API')">
+            <div class="upload-icon">⬆️</div>
+            <div class="upload-text">Arraste os arquivos brutos aqui<br>ou <strong>clique para selecionar</strong></div>
+            <div style="font-size:10px;color:var(--muted-light);margin-top:6px;font-family:'IBM Plex Mono',monospace">MP4 · MXF · RAW · JPG · PNG · ZIP</div>
+          </div>
+        </div>
+
+        <!-- TEAM -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Equipe ativa</div>
+            <span class="badge badge-green">4 membros</span>
+          </div>
+          <div id="team-list"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">Novo episódio</div>
+    <div class="modal-sub">Preencha os dados para registrar no controle</div>
+    <div class="form-group">
+      <label class="form-label">Nome do programa</label>
+      <input type="text" class="form-input" placeholder="Ex: Saúde em Pauta">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Número do episódio</label>
+        <input type="text" class="form-input" placeholder="Ep. 48">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Responsável</label>
+        <select class="form-input">
+          <option>Selecione...</option>
+          <option>Ana Paula</option>
+          <option>Carla Mendes</option>
+          <option>Felipe Reis</option>
+          <option>Luiz Souza</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Data de gravação</label>
+        <input type="date" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Vai ao ar em</label>
+        <input type="date" class="form-input">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Próxima gravação prevista</label>
+      <input type="date" class="form-input">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Fotos do programa</label>
+        <input type="file" class="form-input" accept="image/*" multiple style="padding:7px 10px;font-size:11px">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Arquivo editável</label>
+        <input type="file" class="form-input" style="padding:7px 10px;font-size:11px">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observações</label>
+      <input type="text" class="form-input" placeholder="Ex: Entrevistado confirmado, aguardar liberação">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveEpisode()">Salvar episódio</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const episodes = [
+  { name:'Saúde em Pauta', ep:'Ep. 47', resp:'Carla M.', av:'av1', conv:'done', bucket:'pend', meta:'none', air:'12/05', nextRec:'—' },
+  { name:'Moda & Cia',     ep:'Ep. 22', resp:'Ana P.',   av:'av2', conv:'done', bucket:'done', meta:'done', air:'09/05', nextRec:'—' },
+  { name:'Chef Rápido',    ep:'Ep. 33', resp:'Felipe R.',av:'av3', conv:'pend', bucket:'none', meta:'none', air:'15/05', nextRec:'20/05' },
+  { name:'Negócios & Vc',  ep:'Ep. 18', resp:'Luiz S.',  av:'av4', conv:'done', bucket:'done', meta:'pend', air:'07/05', nextRec:'28/05' },
+  { name:'Saúde em Pauta', ep:'Ep. 48', resp:'Carla M.', av:'av1', conv:'none', bucket:'none', meta:'none', air:'19/05', nextRec:'14/05' },
+];
+
+const icon = { done:'✓', pend:'…', none:'' };
+
+function renderEpisodes(){
+  document.getElementById('ep-tbody').innerHTML = episodes.map(e=>`
+    <tr>
+      <td><div class="ep-name">${e.name}</div><div class="ep-code">${e.ep}</div></td>
+      <td><div class="responsible"><div class="avatar ${e.av}">${e.resp.split(' ').map(x=>x[0]).join('')}</div><span style="font-size:12px;font-weight:500">${e.resp}</span></div></td>
+      <td><div class="check ${e.conv}">${icon[e.conv]}</div></td>
+      <td><div class="check ${e.bucket}">${icon[e.bucket]}</div></td>
+      <td><div class="check ${e.meta}">${icon[e.meta]}</div></td>
+      <td><div class="air-date ${['07/05','09/05'].includes(e.air)?'soon':''}">${e.air}</div></td>
+      <td><div class="air-date ${e.nextRec==='—'?'tbd':''}">${e.nextRec}</div></td>
+    </tr>`).join('');
+}
+
+function renderCalendar(){
+  const days=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const months=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const now=new Date(); const t=now.getDate();
+  document.getElementById('month-label').textContent=months[now.getMonth()]+' '+now.getFullYear();
+  const ev={7:'dot-air',8:'dot-edit',9:'dot-air',10:'dot-record',12:'dot-air',14:'dot-record',15:'dot-air'};
+  document.getElementById('cal-strip').innerHTML=Array.from({length:7},(_,k)=>{
+    const d=t-3+k; const isT=d===t; const e=ev[d]||'';
+    return`<div class="cal-day ${isT?'today':''}"><div class="day-name">${days[(d+3)%7]}</div><div class="day-num">${d}</div>${e?`<div class="cal-dot ${e}"></div>`:'<div style="height:9px"></div>'}</div>`;
+  }).join('');
+}
+
+const team=[
+  {name:'Carla Mendes', role:'Editora-chefe', av:'av1', init:'CM', eps:2},
+  {name:'Ana Paula',    role:'Produtora',     av:'av2', init:'AP', eps:1},
+  {name:'Felipe Reis',  role:'Estagiário',    av:'av3', init:'FR', eps:1},
+  {name:'Luiz Souza',   role:'Estagiário',    av:'av4', init:'LS', eps:1},
+];
+
+function renderTeam(){
+  document.getElementById('team-list').innerHTML=team.map((t,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;${i<team.length-1?'border-bottom:1px solid var(--border)':''}">
+      <div class="avatar ${t.av}" style="width:32px;height:32px;font-size:12px">${t.init}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--blue-900)">${t.name}</div><div style="font-size:11px;color:var(--muted)">${t.role}</div></div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">${t.eps} ep.</div>
+    </div>`).join('');
+}
+
+function setDate(){
+  document.getElementById('current-date').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+}
+
+function switchTab(div,el){
+  document.querySelectorAll('.div-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('division-label').textContent=div==='tvps'?'· TVPS Fast Channel':'· Seguradora ALM';
+}
+
+function openLink(type){
+  const map={onedrive:'https://onedrive.live.com',bucket:'https://app.distribuidora.com.br',metadata:'https://sistema.distribuidora.com.br',calendar:'https://outlook.office.com/calendar',sharepoint:'https://seudominio.sharepoint.com'};
+  alert('Abrir: '+map[type]+'\n\n↳ Substitua pela URL real no arquivo.');
+}
+
+function openModal()  { document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function saveEpisode(){ closeModal(); alert('Episódio salvo!\n\n↳ Integrar com SharePoint List via Microsoft Graph API.'); }
+
+document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+renderEpisodes(); renderCalendar(); renderTeam(); setDate();
+</script>
+</body>
+</html>
