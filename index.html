@@ -1707,7 +1707,7 @@ const msalConfig = {
   auth: {
     clientId: 'e8a7884e-7aee-47f5-914b-52278b8a6f9d',
     authority: 'https://login.microsoftonline.com/4c617de1-2418-44d1-8280-1a8b337262aa',
-    redirectUri: 'https://cassaneli.github.io/central-producao'
+    redirectUri: 'https://cassaneli.github.io/central-producao/redirect.html'
   },
   cache: { cacheLocation: 'sessionStorage' }
 };
@@ -1724,14 +1724,6 @@ let msUser  = null;
 
 async function initAuth(){
   try {
-    // handle redirect response
-    const resp = await msalInstance.handleRedirectPromise();
-    if(resp) {
-      msToken = resp.accessToken;
-      msUser  = resp.account;
-      msalInstance.setActiveAccount(resp.account);
-    }
-
     const accounts = msalInstance.getAllAccounts();
     if(accounts.length > 0){
       msalInstance.setActiveAccount(accounts[0]);
@@ -1759,7 +1751,14 @@ async function acquireToken(){
 }
 
 function msLogin(){
-  msalInstance.loginRedirect({ scopes: SCOPES });
+  msalInstance.loginPopup({ scopes: SCOPES })
+    .then(resp => {
+      msToken = resp.accessToken;
+      msUser  = resp.account;
+      msalInstance.setActiveAccount(resp.account);
+      onAuthSuccess();
+    })
+    .catch(e => console.error('Login error:', e));
 }
 
 function msLogout(){
