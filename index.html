@@ -1744,9 +1744,13 @@ async function acquireToken(){
     const result = await msalInstance.acquireTokenSilent({ scopes: SCOPES, account: msUser });
     msToken = result.accessToken;
   } catch(e) {
-    const result = await msalInstance.acquireTokenPopup({ scopes: SCOPES });
-    msToken = result.accessToken;
-    msUser  = result.account;
+    try {
+      const result = await msalInstance.acquireTokenPopup({ scopes: SCOPES });
+      msToken = result.accessToken;
+      msUser  = result.account;
+    } catch(e2) {
+      console.error('Token error:', e2);
+    }
   }
 }
 
