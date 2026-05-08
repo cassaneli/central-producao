@@ -5,503 +5,1831 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Central de Produção — TVPS & ALM</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
 <style>
-  :root {
-    --bg: #f4f6fb;
-    --white: #ffffff;
-    --surface2: #eef1f8;
-    --border: #dde3f0;
-    --border-strong: #c5cfe8;
-    --blue-900: #0f2a5e;
-    --blue-800: #153580;
-    --blue-700: #1a44a8;
-    --blue-600: #1d54d4;
-    --blue-500: #2563eb;
-    --blue-400: #3b82f6;
-    --blue-300: #93c5fd;
-    --blue-100: #dbeafe;
-    --blue-50:  #eff6ff;
-    --text: #0f1c3a;
-    --text-2: #374263;
-    --muted: #7a88b0;
-    --muted-light: #a8b4d0;
-    --green: #15803d;
-    --green-bg: #dcfce7;
-    --yellow: #92400e;
-    --yellow-bg: #fef3c7;
-    --red: #991b1b;
-    --red-bg: #fee2e2;
-    --shadow-sm: 0 1px 3px rgba(15,42,94,0.06), 0 1px 2px rgba(15,42,94,0.04);
-    --shadow: 0 4px 16px rgba(15,42,94,0.08), 0 1px 4px rgba(15,42,94,0.05);
-    --shadow-lg: 0 12px 40px rgba(15,42,94,0.12);
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+:root {
+  /* TVPS Brand */
+  --tvps-deep:   #030b1f;
+  --tvps-navy:   #050e28;
+  --tvps-blue:   #0a1940;
+  --tvps-royal:  #0d2278;
+  --tvps-bright: #1a3fa8;
+  --tvps-glow:   #2d5be3;
+  --tvps-accent: #4d7fff;
+  --tvps-light:  #7aaaff;
+  --tvps-shine:  #c8d8ff;
 
-  /* ─── SIDEBAR ─── */
-  .sidebar { position:fixed; top:0; left:0; bottom:0; width:240px; background:var(--blue-900); display:flex; flex-direction:column; z-index:200; box-shadow:4px 0 24px rgba(15,42,94,0.18); }
-  .sidebar-logo { padding:28px 24px 24px; border-bottom:1px solid rgba(255,255,255,0.08); }
-  .logo-mark { width:40px; height:40px; background:var(--blue-500); border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; font-size:18px; }
-  .logo-name { font-family:'Playfair Display',serif; font-size:16px; font-weight:700; color:#fff; line-height:1.2; letter-spacing:-0.01em; }
-  .logo-sub { font-size:10px; color:var(--blue-300); font-family:'IBM Plex Mono',monospace; letter-spacing:0.1em; text-transform:uppercase; margin-top:3px; }
-  .sidebar-section { padding:20px 16px 8px; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(147,197,253,0.45); }
-  .nav-item { display:flex; align-items:center; gap:10px; padding:10px 16px; margin:2px 8px; border-radius:8px; cursor:pointer; transition:all .18s; font-size:13px; font-weight:500; color:rgba(255,255,255,0.6); text-decoration:none; }
-  .nav-item:hover { background:rgba(255,255,255,0.07); color:#fff; }
-  .nav-item.active { background:var(--blue-600); color:#fff; font-weight:600; }
-  .nav-icon { width:28px; height:28px; border-radius:6px; background:rgba(255,255,255,0.07); display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
-  .nav-item.active .nav-icon { background:rgba(255,255,255,0.15); }
-  .nav-badge { margin-left:auto; background:var(--blue-500); color:white; font-size:10px; font-weight:600; padding:1px 7px; border-radius:99px; font-family:'IBM Plex Mono',monospace; }
-  .sidebar-divider { height:1px; background:rgba(255,255,255,0.07); margin:12px 16px; }
-  .sidebar-bottom { margin-top:auto; padding:16px; border-top:1px solid rgba(255,255,255,0.07); }
-  .division-toggle { background:rgba(255,255,255,0.06); border-radius:10px; padding:4px; display:flex; gap:4px; }
-  .div-btn { flex:1; padding:7px; border-radius:7px; font-size:11px; font-weight:600; cursor:pointer; border:none; background:none; color:rgba(255,255,255,0.45); transition:all .18s; font-family:'IBM Plex Mono',monospace; letter-spacing:.04em; }
-  .div-btn.active { background:var(--blue-600); color:white; }
+  /* Surface */
+  --bg:#f0f4ff;
+  --white:#ffffff;
+  --s2:#e8eeff;
+  --bd:#d0daff;
+  --bds:#b0c0f0;
 
-  /* ─── LAYOUT ─── */
-  .wrapper { margin-left:240px; min-height:100vh; display:flex; flex-direction:column; }
-  .topbar { background:var(--white); border-bottom:1px solid var(--border); padding:0 40px; height:64px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:var(--shadow-sm); }
-  .page-title { font-family:'Playfair Display',serif; font-size:20px; font-weight:600; color:var(--blue-900); letter-spacing:-0.02em; }
-  .page-title span { font-family:'Inter',sans-serif; font-size:13px; font-weight:400; color:var(--muted); margin-left:12px; }
-  .topbar-right { display:flex; align-items:center; gap:12px; }
-  .date-pill { background:var(--blue-50); border:1px solid var(--blue-100); color:var(--blue-700); font-family:'IBM Plex Mono',monospace; font-size:11px; padding:6px 14px; border-radius:20px; font-weight:500; }
-  .btn-primary { background:var(--blue-600); color:white; border:none; padding:9px 18px; border-radius:8px; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .18s; display:flex; align-items:center; gap:7px; letter-spacing:-0.01em; }
-  .btn-primary:hover { background:var(--blue-700); box-shadow:0 4px 12px rgba(37,99,235,.3); }
-  main { padding:32px 40px; flex:1; }
+  /* Aliases (manter compatibilidade) */
+  --b9:var(--tvps-deep);
+  --b8:var(--tvps-navy);
+  --b7:var(--tvps-royal);
+  --b6:var(--tvps-bright);
+  --b5:var(--tvps-glow);
+  --b4:var(--tvps-accent);
+  --b3:var(--tvps-light);
+  --b1:#c8d8ff;
+  --b0:#eef2ff;
 
-  /* ─── SECTION HEADER ─── */
-  .section-header { font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
-  .section-header::after { content:''; flex:1; height:1px; background:var(--border); }
+  --tx:#06102e; --t2:#1a2a5e; --mu:#6878b0; --ml:#9aabda;
+  --gn:#15803d; --gb:#dcfce7; --yn:#92400e; --yb:#fef3c7;
+  --rn:#991b1b; --rb:#fee2e2;
+  --sh:0 1px 3px rgba(3,11,31,.08),0 1px 2px rgba(3,11,31,.05);
+  --shm:0 4px 20px rgba(3,11,31,.12);
+  --shl:0 16px 48px rgba(3,11,31,.18);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+body::before{content:'';position:fixed;top:0;left:240px;right:0;height:300px;background:radial-gradient(ellipse at 30% 0%,rgba(45,91,227,.06) 0%,transparent 70%);pointer-events:none;z-index:0;}
 
-  /* ─── QUICK LINKS ─── */
-  .quick-links { display:flex; gap:12px; margin-bottom:36px; flex-wrap:wrap; }
-  .quick-btn { display:flex; align-items:center; gap:12px; padding:14px 18px; border-radius:12px; border:1px solid var(--border); background:var(--white); color:var(--text); font-size:13px; font-weight:500; cursor:pointer; text-decoration:none; transition:all .18s; box-shadow:var(--shadow-sm); }
-  .quick-btn:hover { border-color:var(--blue-400); box-shadow:0 4px 16px rgba(37,99,235,.12); transform:translateY(-1px); }
-  .qicon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
-  .qbtn-label { font-size:13px; font-weight:600; color:var(--text); }
-  .qbtn-sub { font-size:11px; color:var(--muted); margin-top:1px; }
+/* SIDEBAR */
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:240px;background:linear-gradient(180deg,var(--tvps-deep) 0%,var(--tvps-navy) 40%,#040d22 100%);display:flex;flex-direction:column;z-index:200;box-shadow:6px 0 40px rgba(0,0,0,.5),inset -1px 0 0 rgba(255,255,255,.04);}
+.sidebar::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 20% 20%,rgba(45,91,227,.15) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(13,34,120,.2) 0%,transparent 60%);pointer-events:none;}
+.sb-logo{}
 
-  /* ─── STATS ─── */
-  .stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:32px; }
-  .stat-card { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:22px 20px; box-shadow:var(--shadow-sm); position:relative; overflow:hidden; transition:box-shadow .2s; }
-  .stat-card:hover { box-shadow:var(--shadow); }
-  .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:14px 14px 0 0; }
-  .stat-card.blue::before   { background:var(--blue-500); }
-  .stat-card.green::before  { background:#22c55e; }
-  .stat-card.yellow::before { background:#f59e0b; }
-  .stat-card.red::before    { background:#ef4444; }
-  .stat-card.indigo::before { background:#6366f1; }
-  .stat-icon { font-size:18px; margin-bottom:10px; display:block; }
-  .stat-number { font-family:'Playfair Display',serif; font-size:40px; font-weight:700; line-height:1; margin-bottom:5px; letter-spacing:-0.02em; }
-  .stat-card.blue   .stat-number { color:var(--blue-600); }
-  .stat-card.green  .stat-number { color:#16a34a; }
-  .stat-card.yellow .stat-number { color:#d97706; }
-  .stat-card.red    .stat-number { color:#dc2626; }
-  .stat-card.indigo .stat-number { color:#4f46e5; }
-  .stat-label { font-size:12px; color:var(--muted); line-height:1.5; }
 
-  /* ─── GRID ─── */
-  .grid-main { display:grid; grid-template-columns:1fr 340px; gap:24px; margin-bottom:24px; }
-  .card { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:24px; box-shadow:var(--shadow-sm); }
-  .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--border); }
-  .card-title { font-family:'Playfair Display',serif; font-size:16px; font-weight:600; color:var(--blue-900); letter-spacing:-0.02em; }
-  .badge { font-family:'IBM Plex Mono',monospace; font-size:10px; padding:3px 10px; border-radius:99px; font-weight:500; letter-spacing:.04em; }
-  .badge-blue   { background:var(--blue-50);  color:var(--blue-700); border:1px solid var(--blue-100); }
-  .badge-green  { background:var(--green-bg); color:var(--green);    border:1px solid #bbf7d0; }
-  .badge-yellow { background:var(--yellow-bg);color:var(--yellow);   border:1px solid #fde68a; }
-  .badge-red    { background:var(--red-bg);   color:var(--red);      border:1px solid #fecaca; }
 
-  /* ─── TABLE ─── */
-  .ep-table { width:100%; border-collapse:collapse; }
-  .ep-table th { font-family:'IBM Plex Mono',monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); text-align:left; padding:0 14px 10px 0; font-weight:500; }
-  .ep-table td { padding:11px 14px 11px 0; font-size:13px; border-bottom:1px solid var(--border); vertical-align:middle; }
-  .ep-table tr:last-child td { border-bottom:none; }
-  .ep-table tbody tr:hover td { background:var(--blue-50); }
-  .ep-name { font-weight:600; font-size:13px; color:var(--blue-900); }
-  .ep-code { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); margin-top:1px; }
-  .check { width:24px; height:24px; border-radius:6px; border:1.5px solid var(--border-strong); display:flex; align-items:center; justify-content:center; font-size:11px; cursor:pointer; transition:all .15s; flex-shrink:0; }
-  .check.done { background:var(--green-bg); border-color:#86efac; color:var(--green); }
-  .check.pend { background:var(--yellow-bg); border-color:#fde68a; color:var(--yellow); }
-  .check.none { background:var(--surface2); border-color:var(--border); color:transparent; }
-  .responsible { display:flex; align-items:center; gap:8px; }
-  .avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; border:2px solid var(--white); box-shadow:0 0 0 1.5px var(--border); }
-  .av1 { background:#dbeafe; color:var(--blue-700); }
-  .av2 { background:#e0e7ff; color:#4338ca; }
-  .av3 { background:#d1fae5; color:#065f46; }
-  .av4 { background:#fce7f3; color:#9d174d; }
-  .air-date { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); font-weight:500; }
-  .air-date.soon { color:var(--blue-600); font-weight:600; }
-  .air-date.tbd  { color:var(--muted-light); font-style:italic; }
+.sb-sec{padding:20px 16px 8px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:rgba(147,197,253,.45)}
+.nav-a{display:flex;align-items:center;gap:10px;padding:10px 16px;margin:2px 8px;border-radius:8px;cursor:pointer;transition:all .18s;font-size:13px;font-weight:500;color:rgba(255,255,255,.6);text-decoration:none}
+.nav-a:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav-a.on{background:linear-gradient(90deg,var(--tvps-bright),var(--tvps-glow));color:#fff;font-weight:600;box-shadow:0 2px 16px rgba(45,91,227,.4),inset 0 1px 0 rgba(255,255,255,.1);}
+.nav-ic{width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.nav-a.on .nav-ic{background:rgba(255,255,255,.15)}
+.nav-bx{margin-left:auto;background:var(--b5);color:#fff;font-size:10px;font-weight:600;padding:1px 7px;border-radius:99px;font-family:'IBM Plex Mono',monospace}
+.sb-div{height:1px;background:rgba(255,255,255,.07);margin:12px 16px}
+.sb-bot{margin-top:auto;padding:16px;border-top:1px solid rgba(255,255,255,.07)}
+.div-tgl{background:rgba(255,255,255,.06);border-radius:10px;padding:4px;display:flex;gap:4px}
+.div-btn{flex:1;padding:7px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;border:none;background:none;color:rgba(255,255,255,.45);transition:all .18s;font-family:'IBM Plex Mono',monospace;letter-spacing:.04em}
+.div-btn.on{background:var(--b6);color:#fff}
 
-  /* ─── SIDE ─── */
-  .side-col { display:flex; flex-direction:column; gap:20px; }
+/* LAYOUT */
+.wrap{margin-left:240px;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:linear-gradient(135deg,#ffffff 0%,#f0f4ff 100%);border-bottom:2px solid var(--tvps-glow);padding:0 40px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(45,91,227,.1);}
+.pg-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--b9);letter-spacing:-.02em}
+.pg-title span{font-family:'Inter',sans-serif;font-size:13px;font-weight:400;color:var(--mu);margin-left:12px}
+.tb-right{display:flex;align-items:center;gap:12px}
+.date-pill{background:linear-gradient(135deg,#eef2ff,#e4ecff);border:1px solid rgba(77,127,255,.3);color:var(--tvps-bright);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:6px 14px;border-radius:20px;font-weight:600;box-shadow:0 0 0 1px rgba(77,127,255,.1);}
+.btn-p{background:linear-gradient(135deg,var(--tvps-bright),var(--tvps-glow));color:#fff;border:none;padding:9px 18px;border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px;box-shadow:0 2px 12px rgba(45,91,227,.3);}
+.btn-p:hover{background:linear-gradient(135deg,var(--tvps-glow),var(--tvps-accent));box-shadow:0 4px 20px rgba(45,91,227,.5);transform:translateY(-1px);}
+main{padding:32px 40px;flex:1}
 
-  /* ─── CALENDAR ─── */
-  .calendar-strip { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
-  .cal-day { background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:8px 4px; text-align:center; }
-  .cal-day .day-name { font-family:'IBM Plex Mono',monospace; color:var(--muted); font-size:8px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:3px; }
-  .cal-day .day-num { font-family:'Playfair Display',serif; font-size:17px; font-weight:600; line-height:1; color:var(--text-2); }
-  .cal-day.today { background:var(--blue-600); border-color:var(--blue-600); }
-  .cal-day.today .day-name { color:rgba(255,255,255,.7); }
-  .cal-day.today .day-num  { color:#fff; }
-  .cal-dot { width:5px; height:5px; border-radius:50%; margin:4px auto 0; }
-  .dot-record { background:#f97316; }
-  .dot-air    { background:var(--blue-500); }
-  .dot-edit   { background:#8b5cf6; }
-  .cal-legend { display:flex; gap:12px; margin-top:10px; flex-wrap:wrap; }
-  .legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--muted); font-family:'IBM Plex Mono',monospace; }
-  .legend-dot { width:7px; height:7px; border-radius:50%; }
+/* SEC HEADER */
+.sh{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--tvps-glow);margin-bottom:14px;display:flex;align-items:center;gap:8px;font-weight:600;}
+.sh::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--tvps-accent),transparent);}
 
-  /* ─── UPLOAD ─── */
-  .upload-zone { border:2px dashed var(--border-strong); border-radius:10px; padding:20px; text-align:center; cursor:pointer; transition:all .18s; background:var(--blue-50); }
-  .upload-zone:hover { border-color:var(--blue-400); background:#e0eaff; }
-  .upload-icon { font-size:24px; margin-bottom:6px; }
-  .upload-text { font-size:12px; color:var(--muted); line-height:1.5; }
-  .upload-text strong { color:var(--blue-600); }
+/* QUICK LINKS */
+.qlinks{display:flex;gap:12px;margin-bottom:36px;flex-wrap:wrap}
+.qbtn{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:12px;border:1px solid var(--bd);background:var(--white);color:var(--tx);font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;transition:all .18s;box-shadow:var(--sh)}
+.qbtn:hover{border-color:var(--b4);box-shadow:0 4px 16px rgba(37,99,235,.12);transform:translateY(-1px)}
+.qic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.ql{font-size:13px;font-weight:600;color:var(--tx)}
+.qs{font-size:11px;color:var(--mu);margin-top:1px}
 
-  /* ─── PIPELINE ─── */
-  .pipeline { display:flex; align-items:flex-start; }
-  .pipe-step { flex:1; text-align:center; position:relative; }
-  .pipe-step::after { content:''; position:absolute; top:17px; right:-50%; width:100%; height:2px; background:var(--border); z-index:0; }
-  .pipe-step:last-child::after { display:none; }
-  .pipe-dot { width:34px; height:34px; border-radius:50%; border:2px solid var(--border); margin:0 auto 8px; display:flex; align-items:center; justify-content:center; font-size:13px; position:relative; z-index:1; background:var(--white); transition:all .2s; }
-  .pipe-dot.done  { background:var(--green-bg); border-color:#86efac; color:var(--green); }
-  .pipe-dot.active{ background:var(--blue-50);  border-color:var(--blue-400); color:var(--blue-600); box-shadow:0 0 0 4px rgba(37,99,235,.1); }
-  .pipe-dot.empty { background:var(--surface2); border-color:var(--border); color:transparent; }
-  .pipe-label { font-size:10px; color:var(--muted); font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.06em; line-height:1.3; }
-  .prog-bar { height:5px; background:var(--surface2); border-radius:99px; overflow:hidden; margin-top:6px; }
-  .prog-fill { height:100%; border-radius:99px; background:var(--blue-500); }
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:32px}
+.sc{background:var(--white);border:1px solid var(--bd);border-radius:14px;padding:22px 20px;box-shadow:var(--sh);position:relative;overflow:hidden;transition:box-shadow .2s}
+.sc:hover{box-shadow:0 8px 32px rgba(45,91,227,.15),0 2px 8px rgba(0,0,0,.06);transform:translateY(-2px);}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.sc.bl::before{background:linear-gradient(90deg,var(--tvps-glow),var(--tvps-accent));}
+.sc.bl{background:linear-gradient(135deg,#fff 60%,#eef2ff 100%);} .sc.gn::before{background:#22c55e} .sc.yn::before{background:#f59e0b} .sc.rd::before{background:#ef4444} .sc.in::before{background:#6366f1}
+.si{font-size:18px;margin-bottom:10px;display:block}
+.sn{font-family:'Playfair Display',serif;font-size:40px;font-weight:700;line-height:1;margin-bottom:5px;letter-spacing:-.02em}
+.sc.bl .sn{color:var(--b6)} .sc.gn .sn{color:#16a34a} .sc.yn .sn{color:#d97706} .sc.rd .sn{color:#dc2626} .sc.in .sn{color:#4f46e5}
+.sl{font-size:12px;color:var(--mu);line-height:1.5}
 
-  /* ─── MODAL ─── */
-  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(15,42,94,.5); backdrop-filter:blur(6px); z-index:1000; align-items:center; justify-content:center; }
-  .modal-overlay.open { display:flex; }
-  .modal { background:var(--white); border:1px solid var(--border); border-radius:18px; padding:36px; width:520px; max-width:94vw; box-shadow:var(--shadow-lg); animation:fadeUp .25s ease; }
-  .modal-title { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:var(--blue-900); margin-bottom:6px; letter-spacing:-0.02em; }
-  .modal-sub { font-size:13px; color:var(--muted); margin-bottom:24px; }
-  .form-group { margin-bottom:14px; }
-  .form-label { display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin-bottom:5px; font-weight:500; }
-  .form-input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; color:var(--text); font-family:'Inter',sans-serif; font-size:13px; outline:none; transition:border-color .18s, box-shadow .18s; }
-  .form-input:focus { border-color:var(--blue-400); box-shadow:0 0 0 3px rgba(37,99,235,.08); background:white; }
-  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .modal-actions { display:flex; gap:10px; margin-top:24px; justify-content:flex-end; }
-  .btn-cancel { background:none; border:1px solid var(--border); color:var(--muted); padding:10px 20px; border-radius:8px; font-family:'Inter',sans-serif; font-size:13px; cursor:pointer; transition:all .18s; font-weight:500; }
-  .btn-cancel:hover { border-color:var(--blue-300); color:var(--text); }
+/* GRID */
+.gm{display:grid;grid-template-columns:1fr 340px;gap:24px;margin-bottom:24px}
+.card{background:var(--white);border:1px solid rgba(160,192,240,.5);border-radius:14px;padding:24px;box-shadow:0 1px 4px rgba(3,11,31,.06),0 0 0 1px rgba(200,216,255,.3);transition:box-shadow .2s;}
+.card:hover{box-shadow:0 4px 20px rgba(45,91,227,.08),0 0 0 1px rgba(160,192,240,.6);}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--bd)}
+.ct{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;color:var(--b9);letter-spacing:-.02em}
+.badge{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 10px;border-radius:99px;font-weight:500;letter-spacing:.04em}
+.bb{background:var(--b0);color:var(--b7);border:1px solid var(--b1)}
+.bg{background:var(--gb);color:var(--gn);border:1px solid #bbf7d0}
+.by{background:var(--yb);color:var(--yn);border:1px solid #fde68a}
 
-  @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-  .card,.stat-card { animation:fadeUp .35s ease both; }
-  .stat-card:nth-child(1){animation-delay:.04s} .stat-card:nth-child(2){animation-delay:.08s} .stat-card:nth-child(3){animation-delay:.12s} .stat-card:nth-child(4){animation-delay:.16s} .stat-card:nth-child(5){animation-delay:.20s}
-  ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:99px}
+/* TABLE */
+.et{width:100%;border-collapse:collapse}
+.et th{font-family:'IBM Plex Mono',monospace;font-size:9.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--mu);text-align:left;padding:0 14px 10px 0;font-weight:500}
+.et td{padding:11px 14px 11px 0;font-size:13px;border-bottom:1px solid var(--bd);vertical-align:middle}
+.et tr:last-child td{border-bottom:none}
+.et tbody tr:hover td{background:var(--b0)}
+.en{font-weight:600;font-size:13px;color:var(--b9)}
+.ec{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mu);margin-top:1px}
+.ck{width:24px;height:24px;border-radius:6px;border:1.5px solid var(--bds);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.ck.done{background:var(--gb);border-color:#86efac;color:var(--gn)}
+.ck.pend{background:var(--yb);border-color:#fde68a;color:var(--yn)}
+.ck.none{background:var(--s2)}
+.resp{display:flex;align-items:center;gap:8px}
+.av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;border:2px solid var(--white);box-shadow:0 0 0 1.5px var(--bd)}
+.av1{background:#dbeafe;color:var(--b7)} .av2{background:#e0e7ff;color:#4338ca} .av3{background:#d1fae5;color:#065f46} .av4{background:#fce7f3;color:#9d174d}
+.ad{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mu);font-weight:500}
+.ad.soon{color:var(--b6);font-weight:600}
+.ad.tbd{color:var(--ml);font-style:italic}
+
+/* SIDE COL */
+.scol{display:flex;flex-direction:column;gap:20px}
+
+/* CAL */
+.cstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cday{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:8px 4px;text-align:center}
+.cday .dn{font-family:'IBM Plex Mono',monospace;color:var(--mu);font-size:8px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.cday .dd{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;line-height:1;color:var(--t2)}
+.cday.today{background:var(--b6);border-color:var(--b6)}
+.cday.today .dn{color:rgba(255,255,255,.7)}
+.cday.today .dd{color:#fff}
+.cdot{width:5px;height:5px;border-radius:50%;margin:4px auto 0}
+.dr{background:#f97316} .dai{background:var(--b5)} .de{background:#8b5cf6}
+.cleg{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--mu);font-family:'IBM Plex Mono',monospace}
+.ld{width:7px;height:7px;border-radius:50%}
+
+/* UPLOAD */
+.upz{border:2px dashed rgba(77,127,255,.4);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:linear-gradient(135deg,#eef2ff,#e8eeff);}
+.upz:hover{border-color:var(--tvps-glow);background:linear-gradient(135deg,#e0eaff,#d4e0ff);box-shadow:0 0 20px rgba(45,91,227,.1);}
+.upi{font-size:24px;margin-bottom:6px}
+.upt{font-size:12px;color:var(--mu);line-height:1.5}
+.upt strong{color:var(--b6)}
+
+/* PIPELINE */
+.pipe{display:flex;align-items:flex-start}
+.ps{flex:1;text-align:center;position:relative}
+.ps::after{content:'';position:absolute;top:17px;right:-50%;width:100%;height:2px;background:var(--bd);z-index:0}
+.ps:last-child::after{display:none}
+.pd{width:34px;height:34px;border-radius:50%;border:2px solid var(--bd);margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:13px;position:relative;z-index:1;background:var(--white);transition:all .2s}
+.pd.done{background:var(--gb);border-color:#86efac;color:var(--gn)}
+.pd.active{background:linear-gradient(135deg,#dde8ff,#c8d8ff);border-color:var(--tvps-glow);color:var(--tvps-bright);box-shadow:0 0 0 4px rgba(45,91,227,.15),0 0 12px rgba(45,91,227,.2);}
+.pd.empty{background:var(--s2);border-color:var(--bd)}
+.pl{font-size:10px;color:var(--mu);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em;line-height:1.3}
+.pb{height:5px;background:var(--s2);border-radius:99px;overflow:hidden;margin-top:6px}
+.pf{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--tvps-bright),var(--tvps-glow),var(--tvps-accent));background-size:200% 100%;animation:shimmer 2s linear infinite;}
+
+/* MODAL — solução definitiva */
+#modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(15,42,94,.55);
+  backdrop-filter: blur(6px);
+  z-index: 99999;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+#modal-overlay.open { display: block; }
+#modal-inner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100%;
+  padding: 60px 20px;
+}
+#modal-box {
+  background: var(--white);
+  border: 1px solid var(--bd);
+  border-radius: 18px;
+  padding: 32px;
+  width: 520px;
+  max-width: 100%;
+  box-shadow: var(--shl);
+  position: relative;
+}
+.mt{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--b9);margin-bottom:6px;letter-spacing:-.02em}
+.ms{font-size:13px;color:var(--mu);margin-bottom:24px}
+.fg{margin-bottom:14px}
+.fl{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--mu);margin-bottom:5px;font-weight:500}
+.fi{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;color:var(--tx);font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .18s,box-shadow .18s}
+.fi:focus{border-color:var(--b4);box-shadow:0 0 0 3px rgba(37,99,235,.08);background:#fff}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ma{display:flex;gap:10px;margin-top:24px;justify-content:flex-end}
+.btn-c{background:none;border:1px solid var(--bd);color:var(--mu);padding:10px 20px;border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;transition:all .18s;font-weight:500}
+.btn-c:hover{border-color:var(--b3);color:var(--tx)}
+
+/* ADMIN */
+.admin-badge{background:linear-gradient(135deg,#f59e0b,#d97706);color:white;font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 8px;border-radius:99px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.admin-only{display:none}
+.is-admin .admin-only{display:flex}
+.admin-panel{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:none}
+.is-admin .admin-panel{display:block}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 8px rgba(45,91,227,.2)}50%{box-shadow:0 0 20px rgba(45,91,227,.4)}}
+.card,.sc{animation:fadeUp .35s ease both}
+.sc:nth-child(1){animation-delay:.04s}.sc:nth-child(2){animation-delay:.08s}.sc:nth-child(3){animation-delay:.12s}.sc:nth-child(4){animation-delay:.16s}.sc:nth-child(5){animation-delay:.20s}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--bds);border-radius:99px}
 </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
-<div class="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-mark">📡</div>
-    <div class="logo-name">Central de Produção</div>
-    <div class="logo-sub">Editorial · Broadcast</div>
+<!-- LOGIN SCREEN -->
+<div id="login-screen" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#030b1f 0%,#050e28 50%,#0a1940 100%);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:0">
+  <div style="text-align:center;max-width:420px;padding:40px">
+    <img src="data:image/png;base64,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" alt="TVPS" style="width:220px;margin-bottom:32px;filter:drop-shadow(0 0 30px rgba(77,127,255,.4))">
+    <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:white;margin-bottom:8px">Central de Produção</div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:rgba(147,197,253,.6);letter-spacing:.1em;text-transform:uppercase;margin-bottom:40px">TVPS · Planos Seguros</div>
+    <button onclick="msLogin()" style="width:100%;padding:16px;border-radius:12px;border:none;background:white;color:#0f2a5e;font-family:'Inter',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;transition:all .2s;box-shadow:0 4px 24px rgba(0,0,0,.3)" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 32px rgba(0,0,0,.4)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 24px rgba(0,0,0,.3)'">
+      <svg width="20" height="20" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+      Entrar com Microsoft
+    </button>
+    <div style="font-size:11px;color:rgba(147,197,253,.4);margin-top:20px;font-family:'IBM Plex Mono',monospace">Use sua conta @almseguradora.com.br</div>
   </div>
+</div>
 
-  <div class="sidebar-section">Navegação</div>
-  <a class="nav-item active" href="#"><div class="nav-icon">📊</div>Dashboard<span class="nav-badge">12</span></a>
-  <a class="nav-item" href="#"><div class="nav-icon">🎬</div>Episódios</a>
-  <a class="nav-item" href="#"><div class="nav-icon">📅</div>Calendário</a>
-  <a class="nav-item" href="#"><div class="nav-icon">📤</div>Upload / Matérias</a>
-
-  <div class="sidebar-divider"></div>
-  <div class="sidebar-section">Links externos</div>
-  <a class="nav-item" href="#" onclick="openLink('onedrive')"><div class="nav-icon">☁️</div>OneDrive</a>
-  <a class="nav-item" href="#" onclick="openLink('bucket')"><div class="nav-icon">🪣</div>Bucket</a>
-  <a class="nav-item" href="#" onclick="openLink('metadata')"><div class="nav-icon">🏷️</div>Metadados</a>
-  <a class="nav-item" href="#" onclick="openLink('sharepoint')"><div class="nav-icon">📂</div>SharePoint</a>
-
-  <div class="sidebar-bottom">
+<!-- APP ROOT -->
+<div id="app-root" style="display:none;width:100%;min-height:100vh">
+<div class="sidebar">
+  <div class="sb-logo" style="padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.06);position:relative">
+    <img src="data:image/png;base64,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" alt="TVPS" style="width:100%;max-width:160px;height:auto;display:block;margin-bottom:10px;filter:drop-shadow(0 0 12px rgba(77,127,255,.3))">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:rgba(122,170,255,.6);letter-spacing:.18em;text-transform:uppercase">Central de Produção</div>
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(77,127,255,.4),transparent)"></div>
+  </div>
+  <div class="sb-sec">Navegação</div>
+  <a class="nav-a on" href="#" onclick="navTo('dashboard');return false"><div class="nav-ic">📊</div>Dashboard<span class="nav-bx" id="ep-count">15</span></a>
+  <a class="nav-a" href="#" onclick="navTo('episodios');return false"><div class="nav-ic">🎬</div>Episódios</a>
+  <a class="nav-a" href="#" onclick="navTo('calendario');return false"><div class="nav-ic">📅</div>Calendário</a>
+  <a class="nav-a" href="#" onclick="navTo('upload');return false"><div class="nav-ic">📤</div>Upload / Matérias</a>
+  <a class="nav-a" href="#" onclick="navTo('chamados');return false"><div class="nav-ic">🎫</div>Chamados<span class="nav-bx" id="ticket-count" style="background:#ef4444">0</span></a>
+  <div class="sb-div"></div>
+  <div class="sb-sec">Links externos</div>
+  <a class="nav-a" href="#" onclick="ol('onedrive');return false"><div class="nav-ic">☁️</div>OneDrive</a>
+  <a class="nav-a" href="#" onclick="ol('bucket');return false"><div class="nav-ic">🦆</div>Bucket</a>
+  <a class="nav-a" href="#" onclick="ol('metadata');return false"><div class="nav-ic">🏷️</div>Metadados</a>
+  <a class="nav-a" href="#" onclick="ol('sharepoint');return false"><div class="nav-ic">📂</div>SharePoint</a>
+  <div class="sb-bot">
+    <!-- USER INFO -->
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.05);border-radius:10px;margin-bottom:12px;border:1px solid rgba(255,255,255,.06)">
+      <div id="ms-user-avatar" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--tvps-bright),var(--tvps-glow));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0">??</div>
+      <div style="flex:1;min-width:0">
+        <div id="ms-user-name" style="font-size:12px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Carregando...</div>
+        <div id="ms-user-email" style="font-size:10px;color:rgba(147,197,253,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+      </div>
+      <button onclick="msLogout()" title="Sair" style="background:none;border:none;color:rgba(147,197,253,.5);cursor:pointer;font-size:14px;padding:2px;flex-shrink:0">⏏</button>
+    </div>
     <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:rgba(147,197,253,.45);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Divisão ativa</div>
-    <div class="division-toggle">
-      <button class="div-btn active" onclick="switchTab('tvps',this)">TVPS</button>
+    <div class="div-tgl" style="margin-bottom:12px">
+      <button class="div-btn on" onclick="switchTab('tvps',this)">TVPS</button>
       <button class="div-btn" onclick="switchTab('alm',this)">ALM</button>
+    </div>
+    <div id="admin-login-area">
+      <button onclick="openAdminLogin()" id="admin-login-btn" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.08em;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.06)'">🔒 MODO ADMIN</button>
+      <div id="admin-logged-area" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:8px;margin-bottom:6px">
+          <div>
+            <div style="font-size:10px;color:#fbbf24;font-family:'IBM Plex Mono',monospace;font-weight:700">👑 ADMIN</div>
+            <div style="font-size:9px;color:rgba(251,191,36,.7);margin-top:1px">Patrick Cassaneli</div>
+          </div>
+          <button onclick="logoutAdmin()" style="background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.3);color:#fca5a5;border-radius:5px;padding:3px 7px;cursor:pointer;font-size:10px">Sair</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- WRAPPER -->
-<div class="wrapper">
+<div class="wrap">
   <div class="topbar">
-    <div>
-      <span class="page-title">Dashboard <span id="division-label">· TVPS Fast Channel</span></span>
-    </div>
-    <div class="topbar-right">
-      <div class="date-pill" id="current-date"></div>
-      <button class="btn-primary" onclick="openModal()"><span>＋</span> Novo episódio</button>
+    <div><span class="pg-title" id="pg-title-main">Dashboard <span id="dlabel">· TVPS Fast Channel</span></span></div>
+    <div class="tb-right">
+      <div class="date-pill" id="cdate"></div>
+      <button class="btn-p" onclick="openModal()"><span>＋</span> Novo episódio</button>
     </div>
   </div>
 
   <main>
-    <!-- QUICK LINKS -->
-    <div class="section-header">Acesso rápido</div>
-    <div class="quick-links">
-      <a href="#" class="quick-btn" onclick="openLink('onedrive')">
-        <div class="qicon" style="background:#eff6ff">☁️</div>
-        <div><div class="qbtn-label">Matérias · OneDrive</div><div class="qbtn-sub">Arquivos brutos dos programas</div></div>
-      </a>
-      <a href="#" class="quick-btn" onclick="openLink('bucket')">
-        <div class="qicon" style="background:#eef2ff">🪣</div>
-        <div><div class="qbtn-label">Bucket · Distribuidora</div><div class="qbtn-sub">App dos canais fast</div></div>
-      </a>
-      <a href="#" class="quick-btn" onclick="openLink('metadata')">
-        <div class="qicon" style="background:#e0f2fe">🏷️</div>
-        <div><div class="qbtn-label">Metadados · Sistema</div><div class="qbtn-sub">Atualizar info dos episódios</div></div>
-      </a>
-      <a href="#" class="quick-btn" onclick="openLink('calendar')">
-        <div class="qicon" style="background:#d1fae5">📅</div>
-        <div><div class="qbtn-label">Calendário editorial</div><div class="qbtn-sub">Gravações & exibições</div></div>
-      </a>
-      <a href="#" class="quick-btn" onclick="openLink('sharepoint')">
-        <div class="qicon" style="background:#f5f3ff">📂</div>
-        <div><div class="qbtn-label">SharePoint · Equipe</div><div class="qbtn-sub">Biblioteca de arquivos</div></div>
-      </a>
+    <!-- ═══ SEÇÃO: DASHBOARD ═══ -->
+    <div id="sec-dashboard">
+    <div class="sh">Acesso rápido</div>
+    <div class="qlinks">
+      <a href="#" class="qbtn" onclick="ol('onedrive');return false"><div class="qic" style="background:#eff6ff">☁️</div><div><div class="ql">Matérias · OneDrive</div><div class="qs">Arquivos brutos dos programas</div></div></a>
+      <a href="#" class="qbtn" onclick="ol('bucket');return false"><div class="qic" style="background:#eef2ff">🦆</div><div><div class="ql">Bucket · Distribuidora</div><div class="qs">App dos canais fast</div></div></a>
+      <a href="#" class="qbtn" onclick="ol('metadata');return false"><div class="qic" style="background:#e0f2fe">🏷️</div><div><div class="ql">Metadados · Sistema</div><div class="qs">Atualizar info dos episódios</div></div></a>
+      <a href="#" class="qbtn" onclick="ol('calendar');return false"><div class="qic" style="background:#d1fae5">📅</div><div><div class="ql">Calendário editorial</div><div class="qs">Gravações & exibições</div></div></a>
+      <a href="#" class="qbtn" onclick="ol('sharepoint');return false"><div class="qic" style="background:#f5f3ff">📂</div><div><div class="ql">SharePoint · Equipe</div><div class="qs">Biblioteca de arquivos</div></div></a>
     </div>
 
-    <!-- STATS -->
-    <div class="section-header">Visão geral</div>
-    <div class="stats-row">
-      <div class="stat-card blue"><span class="stat-icon">🎬</span><div class="stat-number">12</div><div class="stat-label">Episódios em produção</div></div>
-      <div class="stat-card green"><span class="stat-icon">✅</span><div class="stat-number">7</div><div class="stat-label">Prontos no Bucket</div></div>
-      <div class="stat-card yellow"><span class="stat-icon">⏳</span><div class="stat-number">3</div><div class="stat-label">Aguardando conversão</div></div>
-      <div class="stat-card red"><span class="stat-icon">🏷️</span><div class="stat-number">2</div><div class="stat-label">Metadados pendentes</div></div>
-      <div class="stat-card indigo"><span class="stat-icon">📅</span><div class="stat-number">4</div><div class="stat-label">Gravações agendadas</div></div>
+    <div class="sh">Visão geral</div>
+    <div class="stats">
+      <div class="sc bl"><span class="si">🎬</span><div class="sn" id="stat-total">—</div><div class="sl">Episódios no ar</div></div>
+      <div class="sc gn"><span class="si">✅</span><div class="sn" id="stat-bucket">—</div><div class="sl">Prontos no Bucket</div></div>
+      <div class="sc yn"><span class="si">⏳</span><div class="sn" id="stat-conv">—</div><div class="sl">Aguardando conversão</div></div>
+      <div class="sc rd"><span class="si">🏷️</span><div class="sn" id="stat-meta">—</div><div class="sl">Metadados pendentes</div></div>
+      <div class="sc in"><span class="si">📅</span><div class="sn" id="stat-gravacoes">0</div><div class="sl">Gravações agendadas</div></div>
     </div>
 
-    <!-- MAIN GRID -->
-    <div class="grid-main">
+    <div class="gm">
       <div>
-        <!-- EPISODES -->
         <div class="card" style="margin-bottom:24px">
-          <div class="card-header">
-            <div class="card-title">Controle de Episódios</div>
-            <button class="btn-primary" style="padding:7px 14px;font-size:12px" onclick="openModal()">＋ Novo</button>
+          <div class="ch">
+            <div class="ct">Controle de Episódios</div>
+            <button class="btn-p" style="padding:7px 14px;font-size:12px" onclick="openModal()">＋ Novo</button>
           </div>
-          <table class="ep-table">
-            <thead>
-              <tr>
-                <th style="width:180px">Programa / Ep.</th>
-                <th>Responsável</th>
-                <th title="Conversão">Conv.</th>
-                <th title="Bucket">Bucket</th>
-                <th title="Metadados">Meta.</th>
-                <th>Vai ao ar</th>
-                <th>Próx. gravação</th>
-              </tr>
-            </thead>
+          <table class="et">
+            <thead><tr>
+              <th style="width:180px">Programa / Ep.</th>
+              <th>Responsável</th>
+              <th>Conv.</th><th>Bucket</th><th>Meta.</th>
+              <th>Vai ao ar</th><th>Próx. gravação</th>
+            </tr></thead>
             <tbody id="ep-tbody"></tbody>
           </table>
         </div>
-
-        <!-- PIPELINE -->
         <div class="card">
-          <div class="card-header">
-            <div class="card-title">Pipeline de Entrega</div>
-            <span class="badge badge-yellow">Em andamento</span>
+          <div class="ch">
+            <div class="ct">Pipeline de Entrega</div>
+            <span class="badge by">Em andamento</span>
           </div>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:20px">
-            <strong style="color:var(--blue-900)">Saúde em Pauta — Ep. 47</strong>
-            &nbsp;·&nbsp; Responsável: <span style="color:var(--blue-600);font-weight:600">Carla M.</span>
+          <div style="font-size:13px;color:var(--mu);margin-bottom:20px">
+            <strong style="color:var(--b9)">A Frequência do Som — Ep. 02</strong> · <span style="color:var(--b6);font-weight:600">Patrick C.</span>
           </div>
-          <div class="pipeline">
-            <div class="pipe-step"><div class="pipe-dot done">✓</div><div class="pipe-label">Gravação</div></div>
-            <div class="pipe-step"><div class="pipe-dot done">✓</div><div class="pipe-label">Edição</div></div>
-            <div class="pipe-step"><div class="pipe-dot done">✓</div><div class="pipe-label">Conversão</div></div>
-            <div class="pipe-step"><div class="pipe-dot active">⬆</div><div class="pipe-label">Bucket</div></div>
-            <div class="pipe-step"><div class="pipe-dot empty"></div><div class="pipe-label">Metadados</div></div>
-            <div class="pipe-step"><div class="pipe-dot empty"></div><div class="pipe-label">No ar</div></div>
+          <div class="pipe">
+            <div class="ps"><div class="pd done">✓</div><div class="pl">Gravação</div></div>
+            <div class="ps"><div class="pd done">✓</div><div class="pl">Edição</div></div>
+            <div class="ps"><div class="pd done">✓</div><div class="pl">Conversão</div></div>
+            <div class="ps"><div class="pd active">⬆</div><div class="pl">Bucket</div></div>
+            <div class="ps"><div class="pd empty"></div><div class="pl">Metadados</div></div>
+            <div class="ps"><div class="pd empty"></div><div class="pl">No ar</div></div>
           </div>
           <div style="margin-top:18px">
-            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px">
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase">Progresso</span>
-              <span style="color:var(--blue-600);font-weight:600">66%</span>
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin-bottom:4px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em">Progresso</span>
+              <span style="color:var(--b6);font-weight:600">66%</span>
             </div>
-            <div class="prog-bar"><div class="prog-fill" style="width:66%"></div></div>
+            <div class="pb"><div class="pf" style="width:66%"></div></div>
           </div>
         </div>
       </div>
 
-      <!-- SIDE COLUMN -->
-      <div class="side-col">
-        <!-- CALENDAR -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Esta semana</div>
-            <span class="badge badge-blue" id="month-label"></span>
+      <div class="scol">
+        <div class="card" style="padding:20px">
+          <div class="ch" style="margin-bottom:14px">
+            <div class="ct">Calendário Editorial</div>
+            <button class="btn-p" style="padding:6px 12px;font-size:11px" onclick="openCalModal()">＋ Evento</button>
           </div>
-          <div class="calendar-strip" id="cal-strip"></div>
-          <div class="cal-legend">
-            <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>Gravação</div>
-            <div class="legend-item"><div class="legend-dot" style="background:var(--blue-500)"></div>Exibição</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>Edição</div>
+          <!-- NAV -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <button onclick="changeMonth(-1)" style="background:var(--s2);border:1px solid var(--bd);border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:16px;color:var(--b6);display:flex;align-items:center;justify-content:center">‹</button>
+            <div id="cal-month-label" style="font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:var(--b9)"></div>
+            <button onclick="changeMonth(1)" style="background:var(--s2);border:1px solid var(--bd);border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:16px;color:var(--b6);display:flex;align-items:center;justify-content:center">›</button>
+          </div>
+          <!-- WEEKDAYS -->
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px">
+            <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mu);padding:2px">Dom</div>
+            <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mu);padding:2px">Seg</div>
+            <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mu);padding:2px">Ter</div>
+            <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mu);padding:2px">Qua</div>
+            <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mu);padding:2px">Qui</div>
+            <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mu);padding:2px">Sex</div>
+            <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mu);padding:2px">Sáb</div>
+          </div>
+          <!-- DAYS GRID -->
+          <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
+          <!-- LEGEND -->
+          <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--mu);font-family:'IBM Plex Mono',monospace"><div style="width:8px;height:8px;border-radius:50%;background:#f97316"></div>Ext.</div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--mu);font-family:'IBM Plex Mono',monospace"><div style="width:8px;height:8px;border-radius:50%;background:#8b5cf6"></div>Estúdio</div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--mu);font-family:'IBM Plex Mono',monospace"><div style="width:8px;height:8px;border-radius:50%;background:var(--b5)"></div>Exibição</div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--mu);font-family:'IBM Plex Mono',monospace"><div style="width:8px;height:8px;border-radius:50%;background:#22c55e"></div>Edição</div>
+          </div>
+          <!-- DAY EVENTS PANEL -->
+          <div id="day-events" style="display:none;margin-top:14px;border-top:1px solid var(--bd);padding-top:12px">
+            <div id="day-events-title" style="font-size:12px;font-weight:600;color:var(--b9);margin-bottom:8px"></div>
+            <div id="day-events-list"></div>
           </div>
         </div>
-
-        <!-- UPLOAD -->
         <div class="card">
-          <div class="card-header">
-            <div class="card-title">Upload rápido</div>
-            <span class="badge badge-blue">OneDrive</span>
-          </div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Destino: <strong style="color:var(--blue-800);font-family:'IBM Plex Mono',monospace">/Matérias/TVPS/</strong></div>
-          <div class="upload-zone" onclick="alert('Integrar com o SharePoint File Picker ou OneDrive API')">
-            <div class="upload-icon">⬆️</div>
-            <div class="upload-text">Arraste os arquivos brutos aqui<br>ou <strong>clique para selecionar</strong></div>
-            <div style="font-size:10px;color:var(--muted-light);margin-top:6px;font-family:'IBM Plex Mono',monospace">MP4 · MXF · RAW · JPG · PNG · ZIP</div>
+          <div class="ch"><div class="ct">Upload rápido</div><span class="badge bb">OneDrive</span></div>
+          <div style="font-size:12px;color:var(--mu);margin-bottom:10px">Destino: <strong style="color:var(--b8);font-family:'IBM Plex Mono',monospace">/Materiais/</strong></div>
+          <div class="upz" onclick="window.open('https://seguradoraalm-my.sharepoint.com/:f:/g/personal/patrick_cassaneli_almseguradora_com_br/IgDvhFLf9mrTTrPWMec2JqIZAUhTkDPQzn3CJQaqLZf-ZO8?e=0reKJN','_blank')">
+            <div class="upi">⬆️</div>
+            <div class="upt">Clique para abrir a pasta<br><strong>Materiais no OneDrive</strong></div>
+            <div style="font-size:10px;color:var(--ml);margin-top:6px;font-family:'IBM Plex Mono',monospace">MP4 · MXF · RAW · JPG · PNG · ZIP</div>
           </div>
         </div>
-
-        <!-- TEAM -->
         <div class="card">
-          <div class="card-header">
-            <div class="card-title">Equipe ativa</div>
-            <span class="badge badge-green">4 membros</span>
-          </div>
+          <div class="ch"><div class="ct">Equipe ativa</div><span class="badge bg">4 membros</span></div>
           <div id="team-list"></div>
         </div>
       </div>
     </div>
+    </div><!-- fim sec-dashboard -->
+
+    <!-- ═══ SEÇÃO: EPISÓDIOS ═══ -->
+    <div id="sec-episodios" style="display:none">
+      <div class="sh">Controle de Episódios</div>
+      <div id="ep-cards-list" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+
+    <!-- ═══ SEÇÃO: CALENDÁRIO ═══ -->
+    <div id="sec-calendario" style="display:none">
+      <div class="sh">Calendário Editorial</div>
+      <div class="card">
+        <div class="ch">
+          <div class="ct">Eventos & Gravações</div>
+          <button class="btn-p" style="padding:7px 14px;font-size:12px" onclick="openCalModal()">＋ Novo evento</button>
+        </div>
+        <!-- NAV -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <button onclick="changeMonth(-1)" style="background:var(--s2);border:1px solid var(--bd);border-radius:7px;width:34px;height:34px;cursor:pointer;font-size:18px;color:var(--b6);display:flex;align-items:center;justify-content:center">‹</button>
+          <div id="cal-month-label-full" style="font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--b9)"></div>
+          <button onclick="changeMonth(1)" style="background:var(--s2);border:1px solid var(--bd);border-radius:7px;width:34px;height:34px;cursor:pointer;font-size:18px;color:var(--b6);display:flex;align-items:center;justify-content:center">›</button>
+        </div>
+        <!-- WEEKDAYS -->
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px">
+          <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mu);padding:4px">Dom</div>
+          <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mu);padding:4px">Seg</div>
+          <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mu);padding:4px">Ter</div>
+          <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mu);padding:4px">Qua</div>
+          <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mu);padding:4px">Qui</div>
+          <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mu);padding:4px">Sex</div>
+          <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mu);padding:4px">Sáb</div>
+        </div>
+        <!-- GRID FULL -->
+        <div id="cal-grid-full" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px"></div>
+        <!-- LEGEND -->
+        <div style="display:flex;gap:16px;margin-top:16px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mu);font-family:'IBM Plex Mono',monospace"><div style="width:10px;height:10px;border-radius:50%;background:#f97316"></div>Gravação Externa</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mu);font-family:'IBM Plex Mono',monospace"><div style="width:10px;height:10px;border-radius:50%;background:#8b5cf6"></div>Gravação Estúdio</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mu);font-family:'IBM Plex Mono',monospace"><div style="width:10px;height:10px;border-radius:50%;background:var(--b5)"></div>Exibição</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mu);font-family:'IBM Plex Mono',monospace"><div style="width:10px;height:10px;border-radius:50%;background:#22c55e"></div>Edição</div>
+        </div>
+        <!-- EVENTS PANEL -->
+        <div id="day-events-full" style="display:none;margin-top:20px;border-top:1px solid var(--bd);padding-top:16px">
+          <div id="day-events-title-full" style="font-size:14px;font-weight:600;color:var(--b9);margin-bottom:12px"></div>
+          <div id="day-events-list-full"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SEÇÃO: UPLOAD ═══ -->
+    <div id="sec-upload" style="display:none">
+      <div class="sh">Upload & Materiais</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+        <div class="card">
+          <div class="ch"><div class="ct">Pasta Materiais · OneDrive</div><span class="badge bb">OneDrive</span></div>
+          <p style="font-size:13px;color:var(--mu);margin-bottom:20px;line-height:1.6">Clique para abrir a pasta <strong style="color:var(--b9)">Materiais</strong> no OneDrive. Navegue até a subpasta do programa e ano correspondente para fazer o upload.</p>
+          <button class="btn-p" style="width:100%;justify-content:center;padding:14px" onclick="window.open('https://seguradoraalm-my.sharepoint.com/:f:/g/personal/patrick_cassaneli_almseguradora_com_br/IgDvhFLf9mrTTrPWMec2JqIZAUhTkDPQzn3CJQaqLZf-ZO8?e=0reKJN','_blank')">
+            ☁️ &nbsp; Abrir pasta Materiais
+          </button>
+          <div style="margin-top:12px;font-size:11px;color:var(--ml);font-family:'IBM Plex Mono',monospace;text-align:center">MP4 · MXF · RAW · JPG · PNG · ZIP</div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Equipe ativa</div><span class="badge bg">3 membros</span></div>
+          <div id="team-list-upload"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SEÇÃO: CHAMADOS ═══ -->
+    <div id="sec-chamados" style="display:none">
+      <div class="sh">Chamados & Ocorrências</div>
+      <div class="admin-panel">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span class="admin-badge">👑 Visão Admin</span>
+          <span style="font-size:12px;color:var(--yn)">Você está vendo todos os chamados da equipe</span>
+        </div>
+        <div style="display:flex;gap:20px">
+          <div style="font-size:12px;color:var(--t2)">Total de chamados: <strong id="admin-total-tickets">0</strong></div>
+          <div style="font-size:12px;color:var(--t2)">Abertos: <strong id="admin-open-tickets" style="color:#dc2626">0</strong></div>
+          <div style="font-size:12px;color:var(--t2)">Resolvidos: <strong id="admin-done-tickets" style="color:#16a34a">0</strong></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:24px">
+
+        <!-- LISTA DE CHAMADOS -->
+        <div class="card">
+          <div class="ch">
+            <div style="display:flex;align-items:center;gap:0">
+              <button id="tab-ativos" onclick="switchTicketTab('ativos')" style="padding:8px 18px;border:1px solid var(--b6);border-radius:8px 0 0 8px;background:var(--b6);color:white;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Abertos</button>
+              <button id="tab-historico" onclick="switchTicketTab('historico')" style="padding:8px 18px;border:1px solid var(--bd);border-radius:0 8px 8px 0;background:var(--s2);color:var(--mu);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer">Histórico</button>
+            </div>
+            <button class="btn-p" style="padding:7px 14px;font-size:12px" onclick="openTicketModal()">＋ Novo chamado</button>
+          </div>
+          <div id="ticket-list">
+            <div style="text-align:center;padding:40px 0;color:var(--mu);font-size:13px;font-style:italic">Nenhum chamado aberto 🎉</div>
+          </div>
+          <div id="ticket-historico" style="display:none">
+            <div style="text-align:center;padding:40px 0;color:var(--mu);font-size:13px;font-style:italic">Nenhum chamado encerrado ainda</div>
+          </div>
+        </div>
+
+        <!-- STATS CHAMADOS -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card">
+            <div class="ch"><div class="ct">Resumo</div></div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bd)">
+                <div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:#ef4444"></div><span style="font-size:13px;color:var(--t2)">Aberto</span></div>
+                <span id="t-count-open" style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#dc2626">0</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bd)">
+                <div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:#f59e0b"></div><span style="font-size:13px;color:var(--t2)">Em andamento</span></div>
+                <span id="t-count-progress" style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#d97706">0</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0">
+                <div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:#22c55e"></div><span style="font-size:13px;color:var(--t2)">Resolvido</span></div>
+                <span id="t-count-done" style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#16a34a">0</span>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Tipos de problema</div></div>
+            <div style="display:flex;flex-direction:column;gap:8px" id="ticket-types-summary">
+              <div style="font-size:12px;color:var(--mu);font-style:italic">Nenhum chamado ainda</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
-<!-- MODAL -->
-<div class="modal-overlay" id="modal">
-  <div class="modal">
-    <div class="modal-title">Novo episódio</div>
-    <div class="modal-sub">Preencha os dados para registrar no controle</div>
-    <div class="form-group">
-      <label class="form-label">Nome do programa</label>
-      <input type="text" class="form-input" placeholder="Ex: Saúde em Pauta">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Número do episódio</label>
-        <input type="text" class="form-input" placeholder="Ep. 48">
+<!-- MODAL ENCERRAR CHAMADO -->
+<div id="resolve-modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,42,94,.55);backdrop-filter:blur(6px);z-index:99999;overflow-y:auto">
+  <div style="min-height:100%;display:flex;align-items:center;justify-content:center;padding:60px 20px">
+    <div style="background:var(--white);border:1px solid var(--bd);border-radius:18px;padding:32px;width:480px;max-width:100%;box-shadow:var(--shl)">
+      <div class="mt">Encerrar chamado</div>
+      <div class="ms">Registre como o problema foi resolvido antes de encerrar</div>
+      <div id="resolve-ticket-info" style="background:var(--b0);border:1px solid var(--b1);border-radius:10px;padding:14px;margin-bottom:20px;font-size:13px;color:var(--b9)"></div>
+      <div class="fg">
+        <label class="fl">Como foi resolvido?</label>
+        <textarea id="resolve-solucao" class="fi" rows="4" style="resize:vertical" placeholder="Descreva como o problema foi resolvido. Ex: Trecho com direito autoral foi cortado e o vídeo foi resubido sem a música..."></textarea>
       </div>
-      <div class="form-group">
-        <label class="form-label">Responsável</label>
-        <select class="form-input">
-          <option>Selecione...</option>
-          <option>Ana Paula</option>
-          <option>Carla Mendes</option>
-          <option>Felipe Reis</option>
-          <option>Luiz Souza</option>
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Resolvido por</label>
+          <select id="resolve-resp" class="fi">
+            <option value="">Selecione...</option>
+            <option>Patrick Cassaneli</option>
+            <option>Ygor Xavier</option>
+            <option>Maria Eduarda Carneiro</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">Data de resolução</label>
+          <input type="date" id="resolve-data" class="fi">
+        </div>
+      </div>
+      <div class="ma">
+        <button class="btn-c" onclick="closeResolveModal()">Cancelar</button>
+        <button class="btn-p" style="background:#16a34a" onclick="confirmResolve()">✓ Encerrar chamado</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CHAMADO -->
+<div id="ticket-modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,42,94,.55);backdrop-filter:blur(6px);z-index:99999;overflow-y:auto">
+  <div style="min-height:100%;display:flex;align-items:center;justify-content:center;padding:60px 20px">
+    <div style="background:var(--white);border:1px solid var(--bd);border-radius:18px;padding:32px;width:520px;max-width:100%;box-shadow:var(--shl)">
+      <div class="mt">Novo chamado</div>
+      <div class="ms">Registre um problema ou ocorrência em um episódio</div>
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Programa</label>
+          <select id="tk-programa" class="fi">
+            <option value="">Selecione...</option>
+            <option>A Frequência do Som</option>
+            <option>Amor Sem Filtros</option>
+            <option>Bastidores do Seguro</option>
+            <option>Café com Ouro</option>
+            <option>Cartada Final</option>
+            <option>Direito Fácil</option>
+            <option>Esporte em Cena</option>
+            <option>Fala que eu Treino</option>
+            <option>Guerra das UGC's</option>
+            <option>Histórias de Valor</option>
+            <option>Muito Além da Moda</option>
+            <option>Multiplica Comigo</option>
+            <option>Na Veia Esportiva</option>
+            <option>Pod Despertar</option>
+            <option>Xperiência</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">Episódio</label>
+          <input type="text" id="tk-episodio" class="fi" placeholder="Ex: Ep. 13">
+        </div>
+      </div>
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Tipo de problema</label>
+          <select id="tk-tipo" class="fi">
+            <option value="autoral">⚖️ Direito Autoral</option>
+            <option value="audio">🔊 Erro de Áudio</option>
+            <option value="video">🎬 Erro de Vídeo</option>
+            <option value="metadado">🏷️ Metadado incorreto</option>
+            <option value="bucket">🦆 Problema no Bucket</option>
+            <option value="legenda">📝 Legenda / Título</option>
+            <option value="outro">📌 Outro</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">Prioridade</label>
+          <select id="tk-prioridade" class="fi">
+            <option value="alta">🔴 Alta</option>
+            <option value="media">🟡 Média</option>
+            <option value="baixa">🟢 Baixa</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Responsável</label>
+        <select id="tk-resp" class="fi">
+          <option value="">Selecione...</option>
+          <option>Patrick Cassaneli</option>
+          <option>Ygor Xavier</option>
+          <option>Maria Eduarda Carneiro</option>
         </select>
       </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Data de gravação</label>
-        <input type="date" class="form-input">
+      <div class="fg">
+        <label class="fl">Descrição do problema</label>
+        <textarea id="tk-desc" class="fi" rows="3" style="resize:vertical" placeholder="Descreva o problema com detalhes. Ex: Vídeo do Rio FW com direito autoral detectado pelo YouTube entre 5:39 e 5:59..."></textarea>
       </div>
-      <div class="form-group">
-        <label class="form-label">Vai ao ar em</label>
-        <input type="date" class="form-input">
+      <div class="fg">
+        <label class="fl">Link do vídeo / evidência (opcional)</label>
+        <input type="text" id="tk-link" class="fi" placeholder="https://...">
       </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Próxima gravação prevista</label>
-      <input type="date" class="form-input">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Fotos do programa</label>
-        <input type="file" class="form-input" accept="image/*" multiple style="padding:7px 10px;font-size:11px">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Arquivo editável</label>
-        <input type="file" class="form-input" style="padding:7px 10px;font-size:11px">
+      <div class="ma">
+        <button class="btn-c" onclick="closeTicketModal()">Cancelar</button>
+        <button class="btn-p" onclick="saveTicket()">Abrir chamado</button>
       </div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Observações</label>
-      <input type="text" class="form-input" placeholder="Ex: Entrevistado confirmado, aguardar liberação">
+  </div>
+</div>
+
+<!-- MODAL ADMIN LOGIN -->
+<div id="admin-login-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,42,94,.6);backdrop-filter:blur(8px);z-index:99999;overflow-y:auto">
+  <div style="min-height:100%;display:flex;align-items:center;justify-content:center;padding:60px 20px">
+    <div style="background:var(--white);border:1px solid var(--bd);border-radius:18px;padding:36px;width:400px;max-width:100%;box-shadow:var(--shl)">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:36px;margin-bottom:12px">👑</div>
+        <div class="mt" style="text-align:center">Acesso Admin</div>
+        <div class="ms" style="text-align:center">Apenas para o coordenador de marketing</div>
+      </div>
+      <div class="fg">
+        <label class="fl">Senha de administrador</label>
+        <input type="password" id="admin-senha" class="fi" placeholder="••••••••" onkeydown="if(event.key==='Enter') confirmarAdmin()">
+      </div>
+      <div id="admin-erro" style="display:none;font-size:12px;color:#dc2626;margin-top:8px;text-align:center">Senha incorreta. Tente novamente.</div>
+      <div class="ma" style="margin-top:20px">
+        <button class="btn-c" onclick="closeAdminLogin()">Cancelar</button>
+        <button class="btn-p" onclick="confirmarAdmin()">Entrar como Admin</button>
+      </div>
     </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
-      <button class="btn-primary" onclick="saveEpisode()">Salvar episódio</button>
+  </div>
+</div>
+
+<!-- MODAL NOVO PROGRAMA -->
+<div id="novo-prog-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,42,94,.55);backdrop-filter:blur(6px);z-index:99999;overflow-y:auto">
+  <div style="min-height:100%;display:flex;align-items:center;justify-content:center;padding:60px 20px">
+    <div style="background:var(--white);border:1px solid var(--bd);border-radius:18px;padding:32px;width:460px;max-width:100%;box-shadow:var(--shl)">
+      <div class="mt">Novo programa</div>
+      <div class="ms">Cadastre um novo programa na grade da TVPS</div>
+      <div class="fg">
+        <label class="fl">Nome do programa</label>
+        <input type="text" id="np-nome" class="fi" placeholder="Ex: Finanças em Foco">
+      </div>
+      <div class="fg">
+        <label class="fl">Responsável</label>
+        <select id="np-resp" class="fi">
+          <option value="">Selecione...</option>
+          <option>Patrick Cassaneli</option>
+          <option>Ygor Xavier</option>
+          <option>Maria Eduarda Carneiro</option>
+        </select>
+      </div>
+      <div class="ma">
+        <button class="btn-c" onclick="closeNovoPrograma()">Cancelar</button>
+        <button class="btn-p" onclick="salvarNovoPrograma()">Criar programa</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CALENDÁRIO -->
+<div id="cal-modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,42,94,.55);backdrop-filter:blur(6px);z-index:99999;overflow-y:auto">
+  <div style="min-height:100%;display:flex;align-items:center;justify-content:center;padding:60px 20px">
+    <div style="background:var(--white);border:1px solid var(--bd);border-radius:18px;padding:32px;width:460px;max-width:100%;box-shadow:var(--shl)">
+      <div class="mt">Novo evento</div>
+      <div class="ms">Adicione uma gravação, exibição ou edição ao calendário</div>
+      <div class="fg">
+        <label class="fl">Título do evento</label>
+        <input type="text" id="cal-ev-title" class="fi" placeholder="Ex: Gravação Xperiência Ep. 20">
+      </div>
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Data</label>
+          <input type="date" id="cal-ev-date" class="fi">
+        </div>
+        <div class="fg">
+          <label class="fl">Tipo</label>
+          <select id="cal-ev-type" class="fi">
+            <option value="externa">🎥 Gravação Externa</option>
+            <option value="estudio">🎙️ Gravação Estúdio</option>
+            <option value="exibicao">📺 Exibição</option>
+            <option value="edicao">✂️ Edição</option>
+            <option value="outro">📌 Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Responsável</label>
+        <select id="cal-ev-resp" class="fi">
+          <option value="">Selecione...</option>
+          <option>Patrick Cassaneli</option>
+          <option>Ygor Xavier</option>
+          <option>Maria Eduarda Carneiro</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Observações</label>
+        <input type="text" id="cal-ev-obs" class="fi" placeholder="Ex: Estúdio confirmado, câmera reservada">
+      </div>
+      <div class="ma">
+        <button class="btn-c" onclick="closeCalModal()">Cancelar</button>
+        <button class="btn-p" onclick="saveCalEvent()">Salvar evento</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVO EPISÓDIO -->
+<div id="modal-overlay">
+  <div id="modal-inner">
+    <div id="modal-box">
+      <div class="mt">Novo episódio</div>
+      <div class="ms">Preencha os dados para registrar no controle</div>
+      <div class="fg">
+        <label class="fl">Programa</label>
+        <select id="ep-prog-select" class="fi">
+          <option value="">Selecione o programa...</option>
+        </select>
+      </div>
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Número do episódio</label>
+          <input type="text" class="fi" placeholder="Ep. 48">
+        </div>
+        <div class="fg">
+          <label class="fl">Responsável</label>
+          <select class="fi">
+            <option>Selecione...</option>
+            <option>Patrick Cassaneli</option>
+            <option>Ygor Xavier</option>
+            <option>Maria Eduarda Carneiro</option>
+          </select>
+        </div>
+      </div>
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Data de gravação</label>
+          <input type="date" class="fi">
+        </div>
+        <div class="fg">
+          <label class="fl">Vai ao ar em</label>
+          <input type="date" class="fi">
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Próxima gravação prevista</label>
+        <input type="date" class="fi">
+      </div>
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Fotos do programa</label>
+          <input type="file" class="fi" accept="image/*" multiple style="padding:7px 10px;font-size:11px">
+        </div>
+        <div class="fg">
+          <label class="fl">Arquivo editável</label>
+          <input type="file" class="fi" style="padding:7px 10px;font-size:11px">
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Observações</label>
+        <input type="text" class="fi" placeholder="Ex: Entrevistado confirmado, aguardar liberação">
+      </div>
+      <div class="ma">
+        <button class="btn-c" onclick="closeModal()">Cancelar</button>
+        <button class="btn-p" onclick="saveEp()">Salvar episódio</button>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-const episodes = [
-  { name:'Saúde em Pauta', ep:'Ep. 47', resp:'Carla M.', av:'av1', conv:'done', bucket:'pend', meta:'none', air:'12/05', nextRec:'—' },
-  { name:'Moda & Cia',     ep:'Ep. 22', resp:'Ana P.',   av:'av2', conv:'done', bucket:'done', meta:'done', air:'09/05', nextRec:'—' },
-  { name:'Chef Rápido',    ep:'Ep. 33', resp:'Felipe R.',av:'av3', conv:'pend', bucket:'none', meta:'none', air:'15/05', nextRec:'20/05' },
-  { name:'Negócios & Vc',  ep:'Ep. 18', resp:'Luiz S.',  av:'av4', conv:'done', bucket:'done', meta:'pend', air:'07/05', nextRec:'28/05' },
-  { name:'Saúde em Pauta', ep:'Ep. 48', resp:'Carla M.', av:'av1', conv:'none', bucket:'none', meta:'none', air:'19/05', nextRec:'14/05' },
+const programas=[
+  {n:'A Frequência do Som',   total:2,  r:'Patrick C.',a:'av1',c:'done',b:'done',m:'done'},
+  {n:'Amor Sem Filtros',      total:13, r:'Patrick C.',a:'av1',c:'done',b:'done',m:'done'},
+  {n:'Bastidores do Seguro',  total:4,  r:'Ygor X.',   a:'av2',c:'done',b:'done',m:'done'},
+  {n:'Café com Ouro',         total:14, r:'Ygor X.',   a:'av2',c:'done',b:'done',m:'done'},
+  {n:'Cartada Final',         total:1,  r:'Maria E.',  a:'av3',c:'done',b:'done',m:'done'},
+  {n:'Direito Fácil',         total:18, r:'Patrick C.',a:'av1',c:'done',b:'done',m:'done'},
+  {n:'Esporte em Cena',       total:6,  r:'Maria E.',  a:'av3',c:'done',b:'done',m:'done'},
+  {n:'Fala que eu Treino',    total:13, r:'Ygor X.',   a:'av2',c:'done',b:'done',m:'done'},
+  {n:"Guerra das UGC's",      total:4,  r:'Maria E.',  a:'av3',c:'done',b:'done',m:'done'},
+  {n:'Histórias de Valor',    total:5,  r:'Patrick C.',a:'av1',c:'done',b:'done',m:'done'},
+  {n:'Muito Além da Moda',    total:12, r:'Ygor X.',   a:'av2',c:'done',b:'done',m:'done'},
+  {n:'Multiplica Comigo',     total:9,  r:'Maria E.',  a:'av3',c:'done',b:'done',m:'done'},
+  {n:'Na Veia Esportiva',     total:16, r:'Patrick C.',a:'av1',c:'done',b:'done',m:'done'},
+  {n:'Pod Despertar',         total:4,  r:'Ygor X.',   a:'av2',c:'done',b:'done',m:'done'},
+  {n:'Xperiência',            total:19, r:'Maria E.',  a:'av3',c:'done',b:'done',m:'done'},
 ];
+// keep eps as alias for dashboard compatibility
+const eps=programas.map(p=>({n:p.n,e:p.total+' no ar',r:p.r,a:p.a,c:p.c,b:p.b,m:p.m,d:'—',g:'—'}));
+const ic={done:'✓',pend:'…',none:''};
 
-const icon = { done:'✓', pend:'…', none:'' };
-
-function renderEpisodes(){
-  document.getElementById('ep-tbody').innerHTML = episodes.map(e=>`
+function renderEps(){
+  document.getElementById('ep-tbody').innerHTML=eps.map(e=>`
     <tr>
-      <td><div class="ep-name">${e.name}</div><div class="ep-code">${e.ep}</div></td>
-      <td><div class="responsible"><div class="avatar ${e.av}">${e.resp.split(' ').map(x=>x[0]).join('')}</div><span style="font-size:12px;font-weight:500">${e.resp}</span></div></td>
-      <td><div class="check ${e.conv}">${icon[e.conv]}</div></td>
-      <td><div class="check ${e.bucket}">${icon[e.bucket]}</div></td>
-      <td><div class="check ${e.meta}">${icon[e.meta]}</div></td>
-      <td><div class="air-date ${['07/05','09/05'].includes(e.air)?'soon':''}">${e.air}</div></td>
-      <td><div class="air-date ${e.nextRec==='—'?'tbd':''}">${e.nextRec}</div></td>
+      <td><div class="en">${e.n}</div><div class="ec">${e.e}</div></td>
+      <td><div class="resp"><div class="av ${e.a}">${e.r.split(' ').map(x=>x[0]).join('')}</div><span style="font-size:12px;font-weight:500">${e.r}</span></div></td>
+      <td><div class="ck ${e.c}">${ic[e.c]}</div></td>
+      <td><div class="ck ${e.b}">${ic[e.b]}</div></td>
+      <td><div class="ck ${e.m}">${ic[e.m]}</div></td>
+      <td><div class="ad ${['07/05','09/05'].includes(e.d)?'soon':''}">${e.d}</div></td>
+      <td><div class="ad ${e.g==='—'?'tbd':''}">${e.g}</div></td>
     </tr>`).join('');
 }
 
-function renderCalendar(){
-  const days=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  const months=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  const now=new Date(); const t=now.getDate();
-  document.getElementById('month-label').textContent=months[now.getMonth()]+' '+now.getFullYear();
-  const ev={7:'dot-air',8:'dot-edit',9:'dot-air',10:'dot-record',12:'dot-air',14:'dot-record',15:'dot-air'};
-  document.getElementById('cal-strip').innerHTML=Array.from({length:7},(_,k)=>{
-    const d=t-3+k; const isT=d===t; const e=ev[d]||'';
-    return`<div class="cal-day ${isT?'today':''}"><div class="day-name">${days[(d+3)%7]}</div><div class="day-num">${d}</div>${e?`<div class="cal-dot ${e}"></div>`:'<div style="height:9px"></div>'}</div>`;
-  }).join('');
+// ─── CALENDAR ENGINE ───
+const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const TYPE_COLORS={'externa':'#f97316','estudio':'#8b5cf6','exibicao':'#2563eb','edicao':'#22c55e','outro':'#7a88b0'};
+const TYPE_LABELS={'externa':'Gravação Externa','estudio':'Gravação Estúdio','exibicao':'Exibição','edicao':'Edição','outro':'Outro'};
+
+let calYear=new Date().getFullYear();
+let calMonth=new Date().getMonth();
+let calEvents=JSON.parse(localStorage.getItem('calEvents')||'[]');
+
+function saveCalEvents(){ localStorage.setItem('calEvents',JSON.stringify(calEvents)); }
+
+function renderCal(){
+  const grid=document.getElementById('cal-grid');
+  const label=document.getElementById('cal-month-label');
+  label.textContent=MONTHS[calMonth]+' '+calYear;
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const today=new Date();
+  let html='';
+  for(let i=0;i<firstDay;i++) html+=`<div style="height:36px"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayEvs=calEvents.filter(e=>e.date===dateStr);
+    const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
+    const dots=dayEvs.slice(0,3).map(e=>`<div style="width:5px;height:5px;border-radius:50%;background:${TYPE_COLORS[e.type]||'#7a88b0'};flex-shrink:0"></div>`).join('');
+    html+=`<div onclick="selectDay('${dateStr}',${d})" style="height:36px;border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:${isToday?'var(--b6)':'var(--s2)'};border:1px solid ${isToday?'var(--b6)':'var(--bd)'};transition:all .15s;position:relative" onmouseover="this.style.borderColor='var(--b4)'" onmouseout="this.style.borderColor='${isToday?'var(--b6)':'var(--bd)'}'">
+      <div style="font-size:12px;font-weight:${isToday?'700':'500'};color:${isToday?'#fff':'var(--t2)'};line-height:1">${d}</div>
+      <div style="display:flex;gap:2px;margin-top:2px">${dots}</div>
+    </div>`;
+  }
+  grid.innerHTML=html;
+  // update gravacoes agendadas count
+  const upcoming=calEvents.filter(e=>{const ed=new Date(e.date);const td=new Date();td.setHours(0,0,0,0);return ed>=td&&(e.type==='externa'||e.type==='estudio');}).length;
+  document.querySelectorAll('.sc.in .sn').forEach(el=>el.textContent=upcoming||'0');
+}
+
+function selectDay(dateStr,d){
+  const dayEvs=calEvents.filter(e=>e.date===dateStr);
+  const panel=document.getElementById('day-events');
+  const title=document.getElementById('day-events-title');
+  const list=document.getElementById('day-events-list');
+  const [y,m,dd]=dateStr.split('-');
+  title.textContent=`${dd}/${m}/${y}`;
+  if(dayEvs.length===0){
+    list.innerHTML=`<div style="font-size:12px;color:var(--mu);font-style:italic">Nenhum evento. <span style="color:var(--b6);cursor:pointer" onclick="openCalModalDate('${dateStr}')">Adicionar</span></div>`;
+  } else {
+    list.innerHTML=dayEvs.map((ev,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd)">
+        <div style="width:8px;height:8px;border-radius:50%;background:${TYPE_COLORS[ev.type]};flex-shrink:0"></div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:600;color:var(--b9)">${ev.title}</div>
+          <div style="font-size:11px;color:var(--mu)">${TYPE_LABELS[ev.type]}${ev.resp?' · '+ev.resp:''}</div>
+        </div>
+        <div onclick="deleteEvent(${calEvents.indexOf(ev)})" style="color:var(--rn);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px">×</div>
+      </div>`).join('');
+  }
+  panel.style.display='block';
+}
+
+function deleteEvent(idx){
+  if(confirm('Remover este evento?')){ calEvents.splice(idx,1); saveCalEvents(); renderCal(); document.getElementById('day-events').style.display='none'; }
+}
+
+function changeMonth(dir){
+  calMonth+=dir;
+  if(calMonth>11){calMonth=0;calYear++;}
+  if(calMonth<0){calMonth=11;calYear--;}
+  document.getElementById('day-events').style.display='none';
+  renderCal();
+}
+
+// CAL MODAL
+function openCalModal(){ openCalModalDate(''); }
+function openCalModalDate(date){
+  document.getElementById('cal-modal-overlay').style.display='block';
+  document.body.style.overflow='hidden';
+  if(date) document.getElementById('cal-ev-date').value=date;
+}
+function closeCalModal(){
+  document.getElementById('cal-modal-overlay').style.display='none';
+  document.body.style.overflow='';
+}
+function saveCalEvent(){
+  const title=document.getElementById('cal-ev-title').value.trim();
+  const date=document.getElementById('cal-ev-date').value;
+  const type=document.getElementById('cal-ev-type').value;
+  const resp=document.getElementById('cal-ev-resp').value;
+  const obs=document.getElementById('cal-ev-obs').value.trim();
+  if(!title||!date){alert('Preencha o título e a data!');return;}
+  calEvents.push({title,date,type,resp,obs});
+  saveCalEvents();
+  renderCal();
+  closeCalModal();
+  document.getElementById('cal-ev-title').value='';
+  document.getElementById('cal-ev-date').value='';
+  document.getElementById('cal-ev-obs').value='';
 }
 
 const team=[
-  {name:'Carla Mendes', role:'Editora-chefe', av:'av1', init:'CM', eps:2},
-  {name:'Ana Paula',    role:'Produtora',     av:'av2', init:'AP', eps:1},
-  {name:'Felipe Reis',  role:'Estagiário',    av:'av3', init:'FR', eps:1},
-  {name:'Luiz Souza',   role:'Estagiário',    av:'av4', init:'LS', eps:1},
+  {name:'Patrick Cassaneli',    role:'Coord. de Marketing', av:'av1',init:'PC',eps:5},
+  {name:'Ygor Xavier',          role:'Estagiário',          av:'av2',init:'YX',eps:5},
+  {name:'Maria Eduarda Carneiro',role:'Estagiária',          av:'av3',init:'ME',eps:5},
 ];
-
 function renderTeam(){
   document.getElementById('team-list').innerHTML=team.map((t,i)=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;${i<team.length-1?'border-bottom:1px solid var(--border)':''}">
-      <div class="avatar ${t.av}" style="width:32px;height:32px;font-size:12px">${t.init}</div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--blue-900)">${t.name}</div><div style="font-size:11px;color:var(--muted)">${t.role}</div></div>
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">${t.eps} ep.</div>
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;${i<team.length-1?'border-bottom:1px solid var(--bd)':''}">
+      <div class="av ${t.av}" style="width:32px;height:32px;font-size:12px">${t.init}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--b9)">${t.name}</div><div style="font-size:11px;color:var(--mu)">${t.role}</div></div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mu)">${t.eps} ep.</div>
     </div>`).join('');
 }
 
 function setDate(){
-  document.getElementById('current-date').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('cdate').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+}
+function switchTab(d,el){
+  document.querySelectorAll('.div-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('dlabel').textContent=d==='tvps'?'· TVPS Fast Channel':'· Seguradora ALM';
+}
+function ol(t){
+  const m={
+    onedrive:'https://seguradoraalm-my.sharepoint.com/:f:/g/personal/patrick_cassaneli_almseguradora_com_br/IgDvhFLf9mrTTrPWMec2JqIZAUhTkDPQzn3CJQaqLZf-ZO8?e=0reKJN',
+    bucket:'#',
+    metadata:'https://addigital-my.sharepoint.com/:f:/g/personal/suporte_addigital_com_br/IgCwdWNN1XqvQICJmbHRtdwIARAYagHnPd0KZaLsMjvPS74?e=K4kGC9',
+    calendar:'https://outlook.office.com/calendar',
+    sharepoint:'https://seguradoraalm.sharepoint.com'
+  };
+  if(t==='bucket'){ alert('O Bucket é um app instalado no PC — abra pelo atalho na área de trabalho.'); return; }
+  window.open(m[t],'_blank');
 }
 
-function switchTab(div,el){
-  document.querySelectorAll('.div-btn').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('division-label').textContent=div==='tvps'?'· TVPS Fast Channel':'· Seguradora ALM';
+function getAllProgramas(){
+  return [...programas, ...customProgramas];
 }
 
-function openLink(type){
-  const map={onedrive:'https://onedrive.live.com',bucket:'https://app.distribuidora.com.br',metadata:'https://sistema.distribuidora.com.br',calendar:'https://outlook.office.com/calendar',sharepoint:'https://seudominio.sharepoint.com'};
-  alert('Abrir: '+map[type]+'\n\n↳ Substitua pela URL real no arquivo.');
+function openModal(){
+  const sel = document.getElementById('ep-prog-select');
+  if(sel){
+    const allProgs = getAllProgramas();
+    sel.innerHTML = '<option value="">Selecione o programa...</option>' +
+      allProgs.map((p,i) => `<option value="${i}">${p.n}</option>`).join('');
+  }
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+function saveEp(){
+  const sel = document.getElementById('ep-prog-select');
+  const progIdx = sel ? parseInt(sel.value) : -1;
+  if(isNaN(progIdx) || progIdx < 0){ alert('Selecione o programa!'); return; }
+  closeModal();
+  // navigate to episodes and open the selected program
+  navTo('episodios');
+  setTimeout(()=> openPrograma(progIdx), 80);
 }
 
-function openModal()  { document.getElementById('modal').classList.add('open'); }
-function closeModal() { document.getElementById('modal').classList.remove('open'); }
-function saveEpisode(){ closeModal(); alert('Episódio salvo!\n\n↳ Integrar com SharePoint List via Microsoft Graph API.'); }
+document.getElementById('modal-overlay').addEventListener('click',function(e){
+  if(e.target===this || e.target===document.getElementById('modal-inner')) closeModal();
+});
+document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeModal(); closeCalModal(); } });
+document.getElementById('cal-modal-overlay').addEventListener('click',function(e){
+  if(e.target===this || e.target.getAttribute('style') && e.target.style.minHeight==='100%') closeCalModal();
+});
 
-document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
 
-renderEpisodes(); renderCalendar(); renderTeam(); setDate();
+// ─── TICKETS ───
+const TICKET_TIPOS={autoral:'Direito Autoral',audio:'Erro de Áudio',video:'Erro de Vídeo',metadado:'Metadado incorreto',bucket:'Problema no Bucket',legenda:'Legenda / Título',outro:'Outro'};
+const TICKET_PRIO_COLORS={alta:'#ef4444',media:'#f59e0b',baixa:'#22c55e'};
+const TICKET_PRIO_LABELS={alta:'Alta',media:'Média',baixa:'Baixa'};
+const TICKET_STATUS_COLORS={aberto:'#ef4444',andamento:'#f59e0b',resolvido:'#22c55e'};
+const TICKET_STATUS_LABELS={aberto:'Aberto',andamento:'Em andamento',resolvido:'Resolvido'};
+
+let tickets=JSON.parse(localStorage.getItem('tickets')||'[]');
+function saveTickets(){ localStorage.setItem('tickets',JSON.stringify(tickets)); }
+
+function openTicketModal(){
+  document.getElementById('ticket-modal-overlay').style.display='block';
+  document.body.style.overflow='hidden';
+}
+function closeTicketModal(){
+  document.getElementById('ticket-modal-overlay').style.display='none';
+  document.body.style.overflow='';
+}
+function saveTicket(){
+  const prog=document.getElementById('tk-programa').value;
+  const ep=document.getElementById('tk-episodio').value.trim();
+  const tipo=document.getElementById('tk-tipo').value;
+  const prio=document.getElementById('tk-prioridade').value;
+  const resp=document.getElementById('tk-resp').value;
+  const desc=document.getElementById('tk-desc').value.trim();
+  const link=document.getElementById('tk-link').value.trim();
+  if(!prog||!desc){alert('Preencha o programa e a descrição!');return;}
+  const ticket={id:Date.now(),prog,ep,tipo,prio,resp,desc,link,status:'aberto',date:new Date().toLocaleDateString('pt-BR')};
+  tickets.unshift(ticket);
+  saveTickets();
+  renderTickets();
+  closeTicketModal();
+  document.getElementById('tk-desc').value='';
+  document.getElementById('tk-link').value='';
+  document.getElementById('tk-episodio').value='';
+}
+
+let resolveTargetId=null;
+
+function updateTicketStatus(id, status){
+  if(status==='resolvido'){
+    openResolveModal(id);
+    return;
+  }
+  const t=tickets.find(t=>t.id===id);
+  if(t){ t.status=status; saveTickets(); renderTickets(); }
+}
+
+function openResolveModal(id){
+  resolveTargetId=id;
+  const t=tickets.find(t=>t.id===id);
+  if(!t) return;
+  document.getElementById('resolve-ticket-info').innerHTML=
+    `<strong>${t.prog}</strong>${t.ep?' · '+t.ep:''}<br><span style="font-size:12px;color:var(--mu)">${TICKET_TIPOS[t.tipo]||t.tipo} · Prioridade ${TICKET_PRIO_LABELS[t.prio]}</span><br><span style="font-size:12px;color:var(--t2);margin-top:4px;display:block">${t.desc}</span>`;
+  document.getElementById('resolve-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('resolve-modal-overlay').style.display='block';
+  document.body.style.overflow='hidden';
+}
+
+function closeResolveModal(){
+  document.getElementById('resolve-modal-overlay').style.display='none';
+  document.body.style.overflow='';
+  resolveTargetId=null;
+}
+
+function confirmResolve(){
+  const solucao=document.getElementById('resolve-solucao').value.trim();
+  const resp=document.getElementById('resolve-resp').value;
+  const data=document.getElementById('resolve-data').value;
+  if(!solucao){ alert('Descreva como o problema foi resolvido!'); return; }
+  const t=tickets.find(t=>t.id===resolveTargetId);
+  if(t){
+    t.status='resolvido';
+    t.solucao=solucao;
+    t.resolvidoPor=resp;
+    t.dataResolucao=data?new Date(data+'T12:00:00').toLocaleDateString('pt-BR'):new Date().toLocaleDateString('pt-BR');
+    saveTickets();
+    renderTickets();
+  }
+  closeResolveModal();
+  document.getElementById('resolve-solucao').value='';
+}
+
+function switchTicketTab(tab){
+  const ativos=document.getElementById('ticket-list');
+  const hist=document.getElementById('ticket-historico');
+  const tabA=document.getElementById('tab-ativos');
+  const tabH=document.getElementById('tab-historico');
+  if(tab==='ativos'){
+    ativos.style.display='block'; hist.style.display='none';
+    tabA.style.background='var(--b6)'; tabA.style.color='white'; tabA.style.borderColor='var(--b6)';
+    tabH.style.background='var(--s2)'; tabH.style.color='var(--mu)'; tabH.style.borderColor='var(--bd)';
+  } else {
+    ativos.style.display='none'; hist.style.display='block';
+    tabH.style.background='var(--b6)'; tabH.style.color='white'; tabH.style.borderColor='var(--b6)';
+    tabA.style.background='var(--s2)'; tabA.style.color='var(--mu)'; tabA.style.borderColor='var(--bd)';
+    renderHistorico();
+  }
+}
+
+function renderHistorico(){
+  const hist=document.getElementById('ticket-historico');
+  if(!hist) return;
+  const encerrados=tickets.filter(t=>t.status==='resolvido');
+  if(encerrados.length===0){
+    hist.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--mu);font-size:13px;font-style:italic">Nenhum chamado encerrado ainda</div>';
+    return;
+  }
+  hist.innerHTML=encerrados.map(t=>`
+    <div style="border:1px solid #bbf7d0;border-radius:12px;padding:16px;margin-bottom:12px;background:#f0fdf4;border-left:4px solid #22c55e">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:700;color:var(--b9)">${t.prog}</span>
+            ${t.ep?`<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mu)">${t.ep}</span>`:''}
+            <span style="font-size:10px;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#16a34a;font-weight:600;font-family:'IBM Plex Mono',monospace">✓ Encerrado</span>
+          </div>
+          <div style="font-size:11px;color:var(--mu);margin-bottom:8px">${TICKET_TIPOS[t.tipo]||t.tipo} · Aberto em ${t.date}${t.dataResolucao?' · Resolvido em '+t.dataResolucao:''}</div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:8px;padding:8px;background:white;border-radius:6px;border:1px solid #bbf7d0">
+            <strong style="color:#15803d">Problema:</strong> ${t.desc}
+          </div>
+          <div style="font-size:12px;color:var(--t2);padding:8px;background:white;border-radius:6px;border:1px solid #bbf7d0">
+            <strong style="color:#15803d">Solução:</strong> ${t.solucao||'—'}${t.resolvidoPor?' · Por: <strong>'+t.resolvidoPor+'</strong>':''}
+          </div>
+          ${t.link?`<a href="${t.link}" target="_blank" style="font-size:11px;color:var(--b6);margin-top:6px;display:inline-block">🔗 Ver evidência</a>`:''}
+        </div>
+        <button onclick="deleteTicket(${t.id})" style="background:#fee2e2;border:none;color:#dc2626;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0;display:${isAdmin?'block':'none'}">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function deleteTicket(id){
+  if(confirm('Remover este chamado?')){
+    tickets=tickets.filter(t=>t.id!==id);
+    saveTickets();
+    renderTickets();
+  }
+}
+
+function renderTickets(){
+  const list=document.getElementById('ticket-list');
+  if(!list) return;
+
+  // update badge
+  const open=tickets.filter(t=>t.status!=='resolvido').length;
+  const badge=document.getElementById('ticket-count');
+  if(badge) badge.textContent=open;
+
+  // update stats
+  const op=tickets.filter(t=>t.status==='aberto').length;
+  const pr=tickets.filter(t=>t.status==='andamento').length;
+  const rs=tickets.filter(t=>t.status==='resolvido').length;
+  const el_op=document.getElementById('t-count-open');
+  const el_pr=document.getElementById('t-count-progress');
+  const el_rs=document.getElementById('t-count-done');
+  if(el_op) el_op.textContent=op;
+  if(el_pr) el_pr.textContent=pr;
+  if(el_rs) el_rs.textContent=rs;
+
+  // types summary
+  const typesSummary=document.getElementById('ticket-types-summary');
+  if(typesSummary){
+    const typeCounts={};
+    tickets.forEach(t=>{ typeCounts[t.tipo]=(typeCounts[t.tipo]||0)+1; });
+    if(Object.keys(typeCounts).length===0){
+      typesSummary.innerHTML='<div style="font-size:12px;color:var(--mu);font-style:italic">Nenhum chamado ainda</div>';
+    } else {
+      typesSummary.innerHTML=Object.entries(typeCounts).map(([k,v])=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--bd)">
+          <span style="font-size:12px;color:var(--t2)">${TICKET_TIPOS[k]||k}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--b6)">${v}</span>
+        </div>`).join('');
+    }
+  }
+
+  // update admin stats
+  const adminTotal = document.getElementById('admin-total-tickets');
+  const adminOpen = document.getElementById('admin-open-tickets');
+  const adminDone = document.getElementById('admin-done-tickets');
+  if(adminTotal) adminTotal.textContent = tickets.length;
+  if(adminOpen) adminOpen.textContent = tickets.filter(t=>t.status!=='resolvido').length;
+  if(adminDone) adminDone.textContent = tickets.filter(t=>t.status==='resolvido').length;
+
+  if(tickets.length===0){
+    list.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--mu);font-size:13px;font-style:italic">Nenhum chamado aberto 🎉</div>';
+    return;
+  }
+
+  const ativos=tickets.filter(t=>t.status!=='resolvido');
+  if(ativos.length===0){
+    list.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--mu);font-size:13px;font-style:italic">Nenhum chamado aberto 🎉</div>';
+  } else {
+  list.innerHTML=ativos.map(t=>`
+    <div style="border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:12px;border-left:4px solid ${TICKET_PRIO_COLORS[t.prio]}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:700;color:var(--b9)">${t.prog}</span>
+            ${t.ep?`<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mu)">${t.ep}</span>`:''}
+            <span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${TICKET_PRIO_COLORS[t.prio]}20;color:${TICKET_PRIO_COLORS[t.prio]};font-weight:600;font-family:'IBM Plex Mono',monospace">${TICKET_PRIO_LABELS[t.prio]}</span>
+            <span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${TICKET_STATUS_COLORS[t.status]}20;color:${TICKET_STATUS_COLORS[t.status]};font-weight:600;font-family:'IBM Plex Mono',monospace">${TICKET_STATUS_LABELS[t.status]}</span>
+          </div>
+          <div style="font-size:11px;color:var(--mu);margin-bottom:6px">${TICKET_TIPOS[t.tipo]||t.tipo} · ${t.date}${t.resp?' · '+t.resp:''}</div>
+          <div style="font-size:13px;color:var(--t2);line-height:1.5">${t.desc}</div>
+          ${t.link?`<a href="${t.link}" target="_blank" style="font-size:11px;color:var(--b6);margin-top:4px;display:inline-block">🔗 Ver evidência</a>`:''}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0" class="admin-only">
+          <button onclick="deleteTicket(${t.id})" style="background:var(--rb);border:none;color:var(--rn);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px">✕</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px;border-top:1px solid var(--bd);padding-top:10px">
+        <button onclick="updateTicketStatus(${t.id},'aberto')" style="flex:1;padding:5px;border-radius:6px;border:1px solid ${t.status==='aberto'?'#ef4444':'var(--bd)'};background:${t.status==='aberto'?'#fee2e2':'var(--s2)'};color:${t.status==='aberto'?'#dc2626':'var(--mu)'};font-size:11px;cursor:pointer;font-weight:${t.status==='aberto'?'700':'400'}">Aberto</button>
+        <button onclick="updateTicketStatus(${t.id},'andamento')" style="flex:1;padding:5px;border-radius:6px;border:1px solid ${t.status==='andamento'?'#f59e0b':'var(--bd)'};background:${t.status==='andamento'?'#fef3c7':'var(--s2)'};color:${t.status==='andamento'?'#d97706':'var(--mu)'};font-size:11px;cursor:pointer;font-weight:${t.status==='andamento'?'700':'400'}">Em andamento</button>
+        <button onclick="updateTicketStatus(${t.id},'resolvido')" style="flex:1;padding:5px;border-radius:6px;border:1px solid ${t.status==='resolvido'?'#22c55e':'var(--bd)'};background:${t.status==='resolvido'?'#dcfce7':'var(--s2)'};color:${t.status==='resolvido'?'#16a34a':'var(--mu)'};font-size:11px;cursor:pointer;font-weight:${t.status==='resolvido'?'700':'400'}">Resolvido</button>
+      </div>
+    </div>`).join('');
+  }
+}
+
+document.getElementById('resolve-modal-overlay').addEventListener('click',function(e){
+  if(e.target===this) closeResolveModal();
+});
+document.getElementById('ticket-modal-overlay').addEventListener('click',function(e){
+  if(e.target===this) closeTicketModal();
+});
+
+// ─── STATS DINÂMICOS ───
+function updateStats(){
+  const allProgs = getAllProgramas();
+
+  // total episodios no ar
+  const total = allProgs.reduce((sum,p)=>sum+p.total, 0);
+
+  // bucket, conversao, metadados — based on per-episode status saved in localStorage
+  let bucket=0, convPend=0, metaPend=0;
+  allProgs.forEach((p,pi)=>{
+    for(let ep=1; ep<=p.total; ep++){
+      const data = JSON.parse(localStorage.getItem('epstatus_'+pi+'_'+ep)||'{"c":"done","b":"done","m":"done"}');
+      if(data.b==='done') bucket++;
+      if(data.c!=='done') convPend++;
+      if(data.m!=='done') metaPend++;
+    }
+  });
+
+  // gravacoes agendadas (futuras)
+  const today = new Date(); today.setHours(0,0,0,0);
+  const gravacoes = calEvents.filter(e=>{
+    const d=new Date(e.date+'T00:00:00');
+    return d>=today && (e.type==='externa'||e.type==='estudio');
+  }).length;
+
+  // update DOM
+  const el = (id,val)=>{ const e=document.getElementById(id); if(e) e.textContent=val; };
+  el('stat-total', total);
+  el('stat-bucket', bucket);
+  el('stat-conv', convPend);
+  el('stat-meta', metaPend);
+  el('stat-gravacoes', gravacoes);
+}
+
+function getEpStatus(pi,ep){ return JSON.parse(localStorage.getItem('epstatus_'+pi+'_'+ep)||'{"c":"done","b":"done","m":"done"}'); }
+function saveEpStatus(pi,ep,data){ localStorage.setItem('epstatus_'+pi+'_'+ep,JSON.stringify(data)); updateStats(); }
+
+// ─── ADMIN SYSTEM ───
+// IMPORTANT: When Azure AD is integrated, replace password check with:
+// isAdminUser = (User().Email === 'patrick.cassaneli@almseguradora.com.br')
+const ADMIN_EMAIL = 'patrick.cassaneli@almseguradora.com.br'; // future Azure AD check
+let isAdmin = false;
+
+function openAdminLogin(){
+  document.getElementById('admin-login-overlay').style.display='block';
+  document.getElementById('admin-erro').style.display='none';
+  document.getElementById('admin-senha').value='';
+  document.body.style.overflow='hidden';
+  setTimeout(()=>document.getElementById('admin-senha').focus(),100);
+}
+function closeAdminLogin(){
+  document.getElementById('admin-login-overlay').style.display='none';
+  document.body.style.overflow='';
+}
+function confirmarAdmin(){
+  const senha = document.getElementById('admin-senha').value;
+  // SHA-like simple hash check - change 'tvps2024admin' to your preferred password
+  if(senha === 'tvps2024admin'){
+    isAdmin = true;
+    document.body.classList.add('is-admin');
+    document.getElementById('admin-login-btn').style.display='none';
+    document.getElementById('admin-logged-area').style.display='block';
+    closeAdminLogin();
+    renderTickets();
+    showAdminToast();
+  } else {
+    document.getElementById('admin-erro').style.display='block';
+    document.getElementById('admin-senha').value='';
+    document.getElementById('admin-senha').focus();
+  }
+}
+function logoutAdmin(){
+  isAdmin = false;
+  document.body.classList.remove('is-admin');
+  document.getElementById('admin-login-btn').style.display='block';
+  document.getElementById('admin-logged-area').style.display='none';
+  renderTickets();
+}
+function showAdminToast(){
+  const toast = document.createElement('div');
+  toast.style.cssText='position:fixed;bottom:30px;right:30px;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;padding:14px 20px;border-radius:12px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;box-shadow:0 8px 24px rgba(245,158,11,.4);z-index:99999;animation:fadeUp .3s ease';
+  toast.textContent='👑 Modo Admin ativado';
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(), 3000);
+}
+
+document.getElementById('admin-login-overlay').addEventListener('click',function(e){
+  if(e.target===this) closeAdminLogin();
+});
+
+// ─── GERENCIAR PROGRAMAS E EPISÓDIOS ───
+// Load custom programs from localStorage
+let customProgramas = JSON.parse(localStorage.getItem('customProgramas') || '[]');
+
+
+
+function openNovoPrograma(){
+  document.getElementById('novo-prog-overlay').style.display='block';
+  document.body.style.overflow='hidden';
+  document.getElementById('np-nome').value='';
+}
+function closeNovoPrograma(){
+  document.getElementById('novo-prog-overlay').style.display='none';
+  document.body.style.overflow='';
+}
+function salvarNovoPrograma(){
+  const nome = document.getElementById('np-nome').value.trim();
+  const resp = document.getElementById('np-resp').value;
+  if(!nome){ alert('Digite o nome do programa!'); return; }
+  if(!resp){ alert('Selecione o responsável!'); return; }
+  const avMap = {'Patrick Cassaneli':'av1','Ygor Xavier':'av2','Maria Eduarda Carneiro':'av3'};
+  const respShort = resp.split(' ').slice(0,2).join(' ');
+  const novo = {n:nome, total:0, r:respShort, a:avMap[resp]||'av1', c:'none', b:'none', m:'none', custom:true};
+  customProgramas.push(novo);
+  localStorage.setItem('customProgramas', JSON.stringify(customProgramas));
+  closeNovoPrograma();
+  // navegar para aba episodios e abrir o programa criado
+  navTo('episodios');
+  setTimeout(()=>{
+    const allProgs = getAllProgramas();
+    const idx = allProgs.length - 1;
+    openPrograma(idx);
+  }, 80);
+}
+
+function addNovoEpisodio(progIdx){
+  const allProgs = getAllProgramas();
+  const p = allProgs[progIdx];
+  const novoNum = p.total + 1;
+  // update total
+  if(progIdx < programas.length){
+    programas[progIdx].total = novoNum;
+  } else {
+    const customIdx = progIdx - programas.length;
+    customProgramas[customIdx].total = novoNum;
+    localStorage.setItem('customProgramas', JSON.stringify(customProgramas));
+  }
+  // save episode totals for built-in programs
+  localStorage.setItem('ep_totals', JSON.stringify(programas.map(p=>p.total)));
+  // navigate directly to new episode
+  openEpisodio(progIdx, novoNum);
+}
+
+// Load saved totals for built-in programs
+function loadSavedTotals(){
+  const saved = JSON.parse(localStorage.getItem('ep_totals') || 'null');
+  if(saved) saved.forEach((t,i)=>{ if(programas[i]) programas[i].total = t; });
+}
+
+document.getElementById('novo-prog-overlay').addEventListener('click', function(e){
+  if(e.target===this) closeNovoPrograma();
+});
+
+// ─── NAVIGATION ───
+const SECTIONS=['dashboard','episodios','calendario','upload','chamados'];
+const SEC_TITLES={dashboard:'Dashboard',episodios:'Episódios',calendario:'Calendário Editorial',upload:'Upload & Materiais',chamados:'Chamados & Ocorrências'};
+
+function navTo(sec){
+  SECTIONS.forEach(s=>{
+    const el=document.getElementById('sec-'+s);
+    if(el) el.style.display=s===sec?'block':'none';
+  });
+  document.querySelectorAll('.nav-a').forEach(a=>{
+    a.classList.toggle('on', a.getAttribute('onclick') && a.getAttribute('onclick').includes("'"+sec+"'"));
+  });
+  const titleEl=document.getElementById('pg-title-main');
+  if(titleEl) titleEl.childNodes[0].textContent=SEC_TITLES[sec]+' ';
+  if(sec==='episodios') setTimeout(renderEpsFull, 50);
+  if(sec==='chamados') renderTickets();
+  if(sec==='calendario') renderCalFull();
+  if(sec==='upload') renderTeamUpload();
+  window.scrollTo(0,0);
+}
+
+// ─── EP DATA STORAGE ───
+function getEpData(progIdx, epNum){ return JSON.parse(localStorage.getItem('ep_'+progIdx+'_'+epNum)||'{"autorizacoes":[],"fotos":[],"links":[]}'); }
+function saveEpData(progIdx, epNum, data){ localStorage.setItem('ep_'+progIdx+'_'+epNum, JSON.stringify(data)); }
+
+// ─── STATE ───
+let currentProg = null;
+let currentEp   = null;
+
+// ─── LEVEL 1: PROGRAMS ───
+function renderEpsFull(){
+  const list = document.getElementById('ep-cards-list');
+  if(!list) return;
+  currentProg = null;
+  currentEp   = null;
+  const programas_all = getAllProgramas();
+  list.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <span style="font-size:13px;color:var(--mu)">${programas_all.length} programas cadastrados</span>
+      <button class="btn-p" style="padding:8px 18px;font-size:12px" onclick="openNovoPrograma()">＋ Novo programa</button>
+    </div>` +
+  programas_all.map((p,i) => `
+    <div onclick="openPrograma(${i})" style="background:var(--white);border:1px solid rgba(160,192,240,.5);border-radius:14px;padding:18px 22px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh);transition:all .2s" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 20px rgba(45,91,227,.1)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--sh)'">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--tvps-bright),var(--tvps-glow));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎬</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--tvps-deep)">${p.n}</div>
+          <div style="font-size:11px;color:var(--mu);font-family:'IBM Plex Mono',monospace;margin-top:3px">
+            <span style="color:var(--tvps-glow);font-weight:600">${p.total} ep.</span> no ar · ${p.r}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mu)">${p.total} eps</span>
+        <span style="color:var(--mu);font-size:20px">›</span>
+      </div>
+    </div>`).join('');
+}
+
+// ─── LEVEL 2: EPISODES OF A PROGRAM ───
+function openPrograma(i){
+  currentProg = i;
+  const allProgs = getAllProgramas();
+  const p = allProgs[i];
+  const list = document.getElementById('ep-cards-list');
+  list.innerHTML = `
+    <!-- BREADCRUMB -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <button onclick="renderEpsFull()" style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--t2);cursor:pointer;font-family:'Inter',sans-serif;font-weight:500">← Programas</button>
+      <span style="color:var(--mu);font-size:13px">›</span>
+      <span style="font-size:13px;font-weight:600;color:var(--tvps-deep)">${p.n}</span>
+    </div>
+    <!-- PROGRAM HEADER -->
+    <div style="background:linear-gradient(135deg,var(--tvps-bright),var(--tvps-glow));border-radius:14px;padding:22px;margin-bottom:16px;color:white">
+      <div style="font-size:18px;font-weight:700;margin-bottom:4px">${p.n}</div>
+      <div style="font-size:13px;opacity:.8">${p.total} episódios no ar · Responsável: ${p.r}</div>
+    </div>
+    <!-- EPISODE LIST -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div onclick="addNovoEpisodio(${i})" style="background:var(--white);border:2px dashed rgba(45,91,227,.3);border-radius:12px;padding:14px 18px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s" onmouseover="this.style.borderColor='var(--tvps-glow)';this.style.background='#f0f4ff'" onmouseout="this.style.borderColor='rgba(45,91,227,.3)';this.style.background='var(--white)'">
+        <span style="font-size:18px;color:var(--tvps-glow)">＋</span>
+        <span style="font-size:13px;font-weight:600;color:var(--tvps-glow)">Adicionar novo episódio</span>
+      </div>
+      ${Array.from({length:p.total},(_,k)=>{
+        const epNum = k+1;
+        const epData = getEpData(i, epNum);
+        const hasAuth = epData.autorizacoes.length > 0;
+        const hasFotos = epData.fotos.length > 0;
+        const hasLinks = epData.links.length > 0;
+        return `<div onclick="openEpisodio(${i},${epNum})" style="background:var(--white);border:1px solid rgba(160,192,240,.5);border-radius:12px;padding:14px 18px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh);transition:all .15s" onmouseover="this.style.background='#f4f7ff'" onmouseout="this.style.background='var(--white)'">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:36px;height:36px;border-radius:8px;background:var(--s2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--tvps-bright);flex-shrink:0">${String(epNum).padStart(2,'0')}</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--tvps-deep)">Episódio ${epNum}</div>
+              <div style="display:flex;gap:6px;margin-top:4px">
+                ${hasAuth?'<span style="font-size:9px;padding:2px 6px;border-radius:99px;background:#dcfce7;color:#15803d;font-family:IBM Plex Mono,monospace">📄 Aut.</span>':''}
+                ${hasFotos?'<span style="font-size:9px;padding:2px 6px;border-radius:99px;background:#dbeafe;color:#1d54d4;font-family:IBM Plex Mono,monospace">📸 Fotos</span>':''}
+                ${hasLinks?'<span style="font-size:9px;padding:2px 6px;border-radius:99px;background:#fee2e2;color:#dc2626;font-family:IBM Plex Mono,monospace">▶ YT</span>':''}
+                ${!hasAuth&&!hasFotos&&!hasLinks?'<span style="font-size:9px;color:var(--ml);font-family:IBM Plex Mono,monospace;font-style:italic">sem arquivos</span>':''}
+              </div>
+            </div>
+          </div>
+          <span style="color:var(--mu);font-size:18px">›</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ─── LEVEL 3: EPISODE DETAIL ───
+function openEpisodio(progIdx, epNum){
+  currentEp = epNum;
+  const allProgs = getAllProgramas();
+  const p = allProgs[progIdx];
+  const data = getEpData(progIdx, epNum);
+  const list = document.getElementById('ep-cards-list');
+
+  list.innerHTML = `
+    <!-- BREADCRUMB -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+      <button onclick="renderEpsFull()" style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--t2);cursor:pointer;font-family:'Inter',sans-serif;font-weight:500">← Programas</button>
+      <span style="color:var(--mu)">›</span>
+      <button onclick="openPrograma(${progIdx})" style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--t2);cursor:pointer;font-family:'Inter',sans-serif;font-weight:500">${p.n}</button>
+      <span style="color:var(--mu)">›</span>
+      <span style="font-size:13px;font-weight:600;color:var(--tvps-deep)">Episódio ${epNum}</span>
+    </div>
+    <!-- EP HEADER -->
+    <div style="background:linear-gradient(135deg,var(--tvps-bright),var(--tvps-glow));border-radius:14px;padding:20px;margin-bottom:16px;color:white;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:11px;opacity:.7;font-family:'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">${p.n}</div>
+        <div style="font-size:22px;font-weight:700">Episódio ${String(epNum).padStart(2,'0')}</div>
+        <div style="font-size:12px;opacity:.8;margin-top:4px">Responsável: ${p.r}</div>
+      </div>
+      <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:700;opacity:.2">${String(epNum).padStart(2,'0')}</div>
+    </div>
+    <!-- STATUS TOGGLES -->
+    <div style="background:var(--white);border:1px solid rgba(160,192,240,.5);border-radius:14px;padding:18px 22px;margin-bottom:16px;box-shadow:var(--sh)">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--mu);margin-bottom:14px">Status do episódio</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap" id="ep-status-toggles-${progIdx}-${epNum}"></div>
+    </div>
+    <!-- TABS -->
+    <div style="background:var(--white);border:1px solid rgba(160,192,240,.5);border-radius:14px;overflow:hidden;box-shadow:var(--sh)">
+      <div style="display:flex;border-bottom:1px solid rgba(160,192,240,.3);background:#f8faff;overflow-x:auto">
+        <button id="det-tab-autorizacao" onclick="switchDetTab(${progIdx},${epNum},'autorizacao')" style="padding:12px 20px;border:none;border-bottom:2px solid var(--tvps-glow);background:transparent;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--tvps-glow);cursor:pointer;white-space:nowrap">📄 Autorização de Imagem</button>
+        <button id="det-tab-fotos" onclick="switchDetTab(${progIdx},${epNum},'fotos')" style="padding:12px 20px;border:none;border-bottom:2px solid transparent;background:transparent;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--mu);cursor:pointer;white-space:nowrap">📸 Fotos da Gravação</button>
+        <button id="det-tab-links" onclick="switchDetTab(${progIdx},${epNum},'links')" style="padding:12px 20px;border:none;border-bottom:2px solid transparent;background:transparent;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--mu);cursor:pointer;white-space:nowrap">▶ Link YouTube</button>
+      </div>
+      <div id="det-content-autorizacao" style="padding:20px 22px"></div>
+      <div id="det-content-fotos" style="display:none;padding:20px 22px"></div>
+      <div id="det-content-links" style="display:none;padding:20px 22px"></div>
+    </div>`;
+
+  renderDetData(progIdx, epNum);
+  renderDetStatus(progIdx, epNum);
+}
+
+function switchDetTab(progIdx, epNum, tab){
+  ['autorizacao','fotos','links'].forEach(t=>{
+    const c=document.getElementById('det-content-'+t);
+    const b=document.getElementById('det-tab-'+t);
+    if(c) c.style.display=t===tab?'block':'none';
+    if(b){
+      b.style.borderBottom=t===tab?'2px solid var(--tvps-glow)':'2px solid transparent';
+      b.style.color=t===tab?'var(--tvps-glow)':'var(--mu)';
+      b.style.fontWeight=t===tab?'600':'500';
+    }
+  });
+}
+
+function renderDetStatus(pi, en){
+  const wrap = document.getElementById('ep-status-toggles-'+pi+'-'+en);
+  if(!wrap) return;
+  const st = getEpStatus(pi, en);
+  const items = [
+    {key:'c', label:'Conversão',  icon:'🔄'},
+    {key:'b', label:'Bucket',     icon:'🦆'},
+    {key:'m', label:'Metadados',  icon:'🏷️'},
+  ];
+  wrap.innerHTML = items.map(item=>{
+    const done = st[item.key]==='done';
+    return `<button onclick="toggleEpStatus(${pi},${en},'${item.key}')" style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;border:2px solid ${done?'#86efac':'var(--bd)'};background:${done?'#dcfce7':'var(--s2)'};cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif">
+      <span style="font-size:16px">${item.icon}</span>
+      <div style="text-align:left">
+        <div style="font-size:12px;font-weight:700;color:${done?'#15803d':'var(--t2)'}">${item.label}</div>
+        <div style="font-size:10px;color:${done?'#16a34a':'var(--mu)'};font-family:'IBM Plex Mono',monospace">${done?'✓ Concluído':'Pendente'}</div>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+function toggleEpStatus(pi, en, key){
+  const st = getEpStatus(pi, en);
+  st[key] = st[key]==='done' ? 'pend' : 'done';
+  saveEpStatus(pi, en, st);
+  renderDetStatus(pi, en);
+}
+
+function renderDetData(progIdx, epNum){
+  const data = getEpData(progIdx, epNum);
+
+  // AUTORIZAÇÕES
+  const autEl = document.getElementById('det-content-autorizacao');
+  if(autEl){
+    autEl.innerHTML = `<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn-p" style="padding:7px 16px;font-size:12px" onclick="addAutorizacao(${progIdx},${epNum})">＋ Adicionar</button></div>` +
+    (data.autorizacoes.length===0
+      ? '<div style="text-align:center;padding:32px;color:var(--mu);font-size:13px;font-style:italic;background:var(--s2);border-radius:10px">Nenhuma autorização cadastrada</div>'
+      : data.autorizacoes.map((a,j)=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--s2);border-radius:10px;margin-bottom:8px;border-left:3px solid #22c55e">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--tvps-deep)">👤 ${a.nome}</div>
+            <div style="font-size:11px;color:var(--mu);margin-top:3px">${a.tipo} · ${a.data}${a.obs?' · '+a.obs:''}</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-size:10px;padding:3px 10px;border-radius:99px;background:#dcfce7;color:#15803d;font-weight:600">✓ Autorizado</span>
+            <button onclick="removeAutorizacao(${progIdx},${epNum},${j})" style="background:var(--rb);border:none;color:var(--rn);border-radius:6px;padding:4px 9px;cursor:pointer;font-size:12px">✕</button>
+          </div>
+        </div>`).join(''));
+  }
+
+  // FOTOS
+  const fotEl = document.getElementById('det-content-fotos');
+  if(fotEl){
+    fotEl.innerHTML = `<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn-p" style="padding:7px 16px;font-size:12px" onclick="addFoto(${progIdx},${epNum})">＋ Adicionar link</button></div>` +
+    (data.fotos.length===0
+      ? '<div style="text-align:center;padding:32px;color:var(--mu);font-size:13px;font-style:italic;background:var(--s2);border-radius:10px">Nenhuma foto cadastrada</div>'
+      : '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">'+
+        data.fotos.map((f,j)=>`
+          <div style="background:var(--s2);border-radius:10px;padding:14px;position:relative">
+            <div style="font-size:12px;font-weight:600;color:var(--tvps-deep);margin-bottom:6px">📸 ${f.nome}</div>
+            <a href="${f.link}" target="_blank" style="font-size:11px;color:var(--tvps-glow)">Ver foto ↗</a>
+            <button onclick="removeFoto(${progIdx},${epNum},${j})" style="position:absolute;top:8px;right:8px;background:var(--rb);border:none;color:var(--rn);border-radius:5px;padding:2px 7px;cursor:pointer;font-size:11px">✕</button>
+          </div>`).join('')+'</div>');
+  }
+
+  // LINKS YOUTUBE
+  const lnkEl = document.getElementById('det-content-links');
+  if(lnkEl){
+    lnkEl.innerHTML = `<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn-p" style="padding:7px 16px;font-size:12px" onclick="addYoutubeLink(${progIdx},${epNum})">＋ Adicionar link</button></div>` +
+    (data.links.length===0
+      ? '<div style="text-align:center;padding:32px;color:var(--mu);font-size:13px;font-style:italic;background:var(--s2);border-radius:10px">Nenhum link do YouTube cadastrado</div>'
+      : data.links.map((l,j)=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--s2);border-radius:10px;margin-bottom:8px">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--tvps-deep)">▶ ${l.titulo}</div>
+            <a href="${l.url}" target="_blank" style="font-size:11px;color:var(--tvps-glow)">${l.url}</a>
+          </div>
+          <button onclick="removeLink(${progIdx},${epNum},${j})" style="background:var(--rb);border:none;color:var(--rn);border-radius:6px;padding:4px 9px;cursor:pointer;font-size:12px">✕</button>
+        </div>`).join(''));
+  }
+}
+
+// ADD / REMOVE
+function addAutorizacao(pi,en){ const nome=prompt('Nome do convidado:'); if(!nome) return; const tipos={'1':'Imagem e Voz','2':'Somente Imagem','3':'Somente Voz'}; const t=prompt('Tipo:\n1 - Imagem e Voz\n2 - Somente Imagem\n3 - Somente Voz','1'); const obs=prompt('Observação (opcional):',''); const d=getEpData(pi,en); d.autorizacoes.push({nome,tipo:tipos[t]||'Imagem e Voz',obs:obs||'',data:new Date().toLocaleDateString('pt-BR')}); saveEpData(pi,en,d); renderDetData(pi,en); }
+function removeAutorizacao(pi,en,j){ if(!confirm('Remover?')) return; const d=getEpData(pi,en); d.autorizacoes.splice(j,1); saveEpData(pi,en,d); renderDetData(pi,en); }
+function addFoto(pi,en){ const nome=prompt('Descrição da foto:'); if(!nome) return; const link=prompt('Link (OneDrive, Google Drive, etc):'); if(!link) return; const d=getEpData(pi,en); d.fotos.push({nome,link}); saveEpData(pi,en,d); renderDetData(pi,en); }
+function removeFoto(pi,en,j){ if(!confirm('Remover?')) return; const d=getEpData(pi,en); d.fotos.splice(j,1); saveEpData(pi,en,d); renderDetData(pi,en); }
+function addYoutubeLink(pi,en){ const titulo=prompt('Título no YouTube:'); if(!titulo) return; const url=prompt('Link do YouTube:'); if(!url) return; const d=getEpData(pi,en); d.links.push({titulo,url}); saveEpData(pi,en,d); renderDetData(pi,en); }
+function removeLink(pi,en,j){ if(!confirm('Remover?')) return; const d=getEpData(pi,en); d.links.splice(j,1); saveEpData(pi,en,d); renderDetData(pi,en); }
+
+
+function selectDayFull(dateStr,d){
+  const dayEvs=calEvents.filter(e=>e.date===dateStr);
+  const panel=document.getElementById('day-events-full');
+  const title=document.getElementById('day-events-title-full');
+  const list=document.getElementById('day-events-list-full');
+  const [y,m,dd]=dateStr.split('-');
+  title.textContent=`Eventos de ${dd}/${m}/${y}`;
+  if(dayEvs.length===0){
+    list.innerHTML=`<div style="font-size:13px;color:var(--mu);font-style:italic">Nenhum evento neste dia. <span style="color:var(--b6);cursor:pointer;font-weight:600" onclick="openCalModalDate('${dateStr}')">+ Adicionar</span></div>`;
+  } else {
+    list.innerHTML=dayEvs.map((ev)=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd)">
+        <div style="width:10px;height:10px;border-radius:50%;background:${TYPE_COLORS[ev.type]};flex-shrink:0"></div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--b9)">${ev.title}</div>
+          <div style="font-size:11px;color:var(--mu)">${TYPE_LABELS[ev.type]}${ev.resp?' · '+ev.resp:''}${ev.obs?' · '+ev.obs:''}</div>
+        </div>
+        <div onclick="deleteEventFull(${calEvents.indexOf(ev)})" style="color:var(--rn);cursor:pointer;font-size:20px;padding:2px 8px">×</div>
+      </div>`).join('');
+  }
+  panel.style.display='block';
+}
+
+function deleteEventFull(idx){
+  if(confirm('Remover este evento?')){ calEvents.splice(idx,1); saveCalEvents(); renderCalFull(); renderCal(); document.getElementById('day-events-full').style.display='none'; }
+}
+
+function renderTeamUpload(){
+  const el=document.getElementById('team-list-upload');
+  if(!el) return;
+  el.innerHTML=team.map((t,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;${i<team.length-1?'border-bottom:1px solid var(--bd)':''}">
+      <div class="av ${t.av}" style="width:32px;height:32px;font-size:12px">${t.init}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--b9)">${t.name}</div><div style="font-size:11px;color:var(--mu)">${t.role}</div></div>
+    </div>`).join('');
+}
+
+// ─── MICROSOFT AUTH (MSAL) ───
+const msalConfig = {
+  auth: {
+    clientId: 'e8a7884e-7aee-47f5-914b-52278b8a6f9d',
+    authority: 'https://login.microsoftonline.com/4c617de1-2418-44d1-8280-1a8b337262aa',
+    redirectUri: 'https://cassaneli.github.io/central-producao'
+  },
+  cache: { cacheLocation: 'sessionStorage' }
+};
+
+const msalInstance = new msal.PublicClientApplication(msalConfig);
+
+const SCOPES = ['User.Read', 'Sites.ReadWrite.All', 'Files.ReadWrite'];
+const SITE_URL = 'https://seguradoraalm-my.sharepoint.com/personal/patrick_cassaneli_almseguradora_com_br';
+const LIST_NAME = 'CentralProducao';
+const ADMIN_EMAIL_MS = 'patrick.cassaneli@almseguradora.com.br';
+
+let msToken = null;
+let msUser  = null;
+
+async function initAuth(){
+  try {
+    // handle redirect response
+    const resp = await msalInstance.handleRedirectPromise();
+    if(resp) {
+      msToken = resp.accessToken;
+      msUser  = resp.account;
+      msalInstance.setActiveAccount(resp.account);
+    }
+
+    const accounts = msalInstance.getAllAccounts();
+    if(accounts.length > 0){
+      msalInstance.setActiveAccount(accounts[0]);
+      msUser = accounts[0];
+      await acquireToken();
+      onAuthSuccess();
+    } else {
+      showLoginScreen();
+    }
+  } catch(e){
+    console.error('Auth error:', e);
+    showLoginScreen();
+  }
+}
+
+async function acquireToken(){
+  try {
+    const result = await msalInstance.acquireTokenSilent({ scopes: SCOPES, account: msUser });
+    msToken = result.accessToken;
+  } catch(e) {
+    const result = await msalInstance.acquireTokenPopup({ scopes: SCOPES });
+    msToken = result.accessToken;
+    msUser  = result.account;
+  }
+}
+
+function msLogin(){
+  msalInstance.loginRedirect({ scopes: SCOPES });
+}
+
+function msLogout(){
+  msalInstance.logoutRedirect();
+}
+
+function onAuthSuccess(){
+  // hide login screen
+  const loginScreen = document.getElementById('login-screen');
+  if(loginScreen) loginScreen.style.display='none';
+  document.getElementById('app-root').style.display='flex';
+
+  // update user info in sidebar
+  const email = msUser.username || '';
+  const name  = msUser.name || email;
+  document.getElementById('ms-user-name').textContent  = name;
+  document.getElementById('ms-user-email').textContent = email;
+  document.getElementById('ms-user-avatar').textContent = name.split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
+
+  // auto admin if patrick
+  if(email.toLowerCase() === ADMIN_EMAIL_MS.toLowerCase()){
+    isAdmin = true;
+    document.body.classList.add('is-admin');
+    document.getElementById('admin-login-btn').style.display='none';
+    document.getElementById('admin-logged-area').style.display='block';
+    showAdminToast();
+  }
+
+  loadSavedTotals(); renderEps(); renderCal(); renderTeam(); setDate(); renderTickets(); updateStats();
+}
+
+function showLoginScreen(){
+  document.getElementById('app-root').style.display='none';
+  const loginScreen = document.getElementById('login-screen');
+  if(loginScreen) loginScreen.style.display='flex';
+}
+
+// ─── SHAREPOINT API ───
+async function spGet(endpoint){
+  if(!msToken) await acquireToken();
+  const res = await fetch('https://graph.microsoft.com/v1.0'+endpoint, {
+    headers: { 'Authorization': 'Bearer '+msToken, 'Accept': 'application/json' }
+  });
+  return res.json();
+}
+
+async function spPost(endpoint, body){
+  if(!msToken) await acquireToken();
+  const res = await fetch('https://graph.microsoft.com/v1.0'+endpoint, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer '+msToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+async function spPatch(endpoint, body){
+  if(!msToken) await acquireToken();
+  const res = await fetch('https://graph.microsoft.com/v1.0'+endpoint, {
+    method: 'PATCH',
+    headers: { 'Authorization': 'Bearer '+msToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+// Init
+loadSavedTotals(); renderEps(); renderCal(); renderTeam(); setDate(); renderTickets(); updateStats();
+initAuth();
 </script>
+</div><!-- end app-root -->
 </body>
 </html>
