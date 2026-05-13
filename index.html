@@ -1894,24 +1894,35 @@ async function getSiteAndListId(){
   }
 }
 
+// Cache all SP items to avoid multiple calls
+var spItemsCache = null;
+
+async function spGetAllItems(){
+  if(spItemsCache) return spItemsCache;
+  const result = await spGet('/sites/'+spSiteId+'/lists/'+spListId+'/items?$expand=fields&$select=id,fields');
+  spItemsCache = result.value || [];
+  return spItemsCache;
+}
+
 async function spSaveData(key, value){
   try {
     const ok = await getSiteAndListId();
     if(!ok) return;
-    // Check if item exists
-    var filterKey = encodeURIComponent(key);
-    const existing = await spGet('/sites/'+spSiteId+'/lists/'+spListId+'/items?$filter=fields/Title eq \'' +filterKey+ '\'&$select=id,fields');
-    if(existing.value && existing.value.length > 0){
-      const itemId = existing.value[0].id;
-      await spPatch('/sites/'+spSiteId+'/lists/'+spListId+'/items/'+itemId+'/fields', {
-        Title: key,
-        Valor: JSON.stringify(value)
+    const items = await spGetAllItems();
+    const existing = items.find(function(i){ return i.fields && i.fields.Title === key; });
+    const strVal = JSON.stringify(value);
+    if(existing){
+      await spPatch('/sites/'+spSiteId+'/lists/'+spListId+'/items/'+existing.id+'/fields', {
+        Title: key, Valor: strVal
       });
+      existing.fields.Valor = strVal;
     } else {
-      await spPost('/sites/'+spSiteId+'/lists/'+spListId+'/items', {
-        fields: { Title: key, Valor: JSON.stringify(value) }
+      const newItem = await spPost('/sites/'+spSiteId+'/lists/'+spListId+'/items', {
+        fields: { Title: key, Valor: strVal }
       });
+      spItemsCache = null; // invalidate cache
     }
+    console.log('Saved to SP:', key);
   } catch(e) {
     console.error('spSaveData error:', e);
   }
@@ -1921,11 +1932,10 @@ async function spLoadData(key){
   try {
     const ok = await getSiteAndListId();
     if(!ok) return null;
-    var filterKey2 = encodeURIComponent(key);
-    const result = await spGet('/sites/'+spSiteId+'/lists/'+spListId+'/items?$filter=fields/Title eq \'' +filterKey2+ '\'&$select=fields&$expand=fields');
-    if(result.value && result.value.length > 0){
-      const raw = result.value[0].fields.Valor;
-      return raw ? JSON.parse(raw) : null;
+    const items = await spGetAllItems();
+    const item = items.find(function(i){ return i.fields && i.fields.Title === key; });
+    if(item && item.fields.Valor){
+      return JSON.parse(item.fields.Valor);
     }
     return null;
   } catch(e) {
@@ -1939,24 +1949,30 @@ async function spLoadAll(){
     const ok = await getSiteAndListId();
     if(!ok) return;
     
-    // Load tickets
-    const spTickets = await spLoadData('tickets');
-    if(spTickets) { tickets = spTickets; saveTickets(); }
+    // Load all items in one call
+    const items = await spGetAllItems();
+    console.log('SP items loaded:', items.length);
     
-    // Load calEvents
-    const spCalEvents = await spLoadData('calEvents');
-    if(spCalEvents) { calEvents = spCalEvents; saveCalEvents(); }
+    function getVal(key){
+      var item = items.find(function(i){ return i.fields && i.fields.Title === key; });
+      if(item && item.fields.Valor){ try{ return JSON.parse(item.fields.Valor); }catch(e){ return null; } }
+      return null;
+    }
     
-    // Load customProgramas
-    const spCustomProgs = await spLoadData('customProgramas');
-    if(spCustomProgs) { customProgramas = spCustomProgs; localStorage.setItem('customProgramas', JSON.stringify(customProgramas)); }
+    var spTickets = getVal('tickets');
+    if(spTickets){ tickets = spTickets; localStorage.setItem('tickets', JSON.stringify(tickets)); }
     
-    // Load ep_totals
-    const spTotals = await spLoadData('ep_totals');
-    if(spTotals) { spTotals.forEach((t,i)=>{ if(programas[i]) programas[i].total = t; }); localStorage.setItem('ep_totals', JSON.stringify(spTotals)); }
+    var spCalEvents = getVal('calEvents');
+    if(spCalEvents){ calEvents = spCalEvents; localStorage.setItem('calEvents', JSON.stringify(calEvents)); }
+    
+    var spCustomProgs = getVal('customProgramas');
+    if(spCustomProgs){ customProgramas = spCustomProgs; localStorage.setItem('customProgramas', JSON.stringify(customProgramas)); }
+    
+    var spTotals = getVal('ep_totals');
+    if(spTotals){ spTotals.forEach(function(t,i){ if(programas[i]) programas[i].total = t; }); localStorage.setItem('ep_totals', JSON.stringify(spTotals)); }
 
     renderEps(); renderCal(); renderTeam(); renderTickets(); updateStats();
-    console.log('SharePoint data loaded!');
+    console.log('SharePoint data loaded successfully!');
   } catch(e) {
     console.error('spLoadAll error:', e);
   }
