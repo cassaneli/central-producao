@@ -1873,14 +1873,19 @@ async function spPatch(endpoint, body){
 async function getSiteAndListId(){
   if(spSiteId && spListId) return true;
   try {
-    const site = await spGet('/sites/seguradoraalm.sharepoint.com:/sites/MARKETING-TVPSALM:');
-    console.log('Site response:', JSON.stringify(site).substring(0,200));
-    spSiteId = site.id;
+    // Try different site URL formats
+    var siteResp = await spGet('/sites/seguradoraalm.sharepoint.com,/sites/MARKETING-TVPSALM');
+    if(siteResp.error) {
+      siteResp = await spGet('/sites/seguradoraalm.sharepoint.com:/sites/MARKETING-TVPSALM');
+    }
+    console.log('Site response:', JSON.stringify(siteResp).substring(0,300));
+    if(siteResp.error) { console.error('Site error:', siteResp.error); return false; }
+    spSiteId = siteResp.id;
     const lists = await spGet('/sites/'+spSiteId+'/lists?$select=id,name,displayName');
-    console.log('Lists found:', lists.value ? lists.value.map(l=>l.name).join(', ') : 'none');
+    console.log('Lists:', lists.value ? lists.value.map(function(l){return l.name;}).join(', ') : JSON.stringify(lists).substring(0,200));
     const list = lists.value && lists.value.find(function(l){ return l.name===LIST_NAME||l.displayName===LIST_NAME; });
     if(list) spListId = list.id;
-    console.log('List ID:', spListId);
+    console.log('Site ID:', spSiteId, 'List ID:', spListId);
     return !!(spSiteId && spListId);
   } catch(e) {
     console.error('getSiteAndListId error:', e);
