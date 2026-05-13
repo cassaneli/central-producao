@@ -1874,14 +1874,14 @@ async function getSiteAndListId(){
   if(spSiteId && spListId) return true;
   try {
     // Try different site URL formats
-    var siteResp = await spGet('/sites/seguradoraalm.sharepoint.com:/sites/MARKETING-TVPSALM');
+    var siteResp = await spGet('/sites/seguradoraalm.sharepoint.com:/sites/MARKETING-TVPSALM:');
     console.log('Site response:', JSON.stringify(siteResp).substring(0,300));
     if(siteResp.error) { console.error('Site error:', siteResp.error); return false; }
-    // Extract just the site GUID from compound ID (format: hostname,siteId,webId)
+    // Extract just the site GUID (3rd part of compound ID: hostname,siteId,webId)
     var rawId = siteResp.id || '';
-    var parts = rawId.split(',');
-    spSiteId = parts.length >= 2 ? parts[1] : rawId;
-    console.log('Raw ID:', rawId, 'Using Site ID:', spSiteId);
+    var idParts = rawId.split(',');
+    spSiteId = idParts.length >= 3 ? idParts[1] : (idParts.length >= 2 ? idParts[1] : rawId);
+    console.log('Using Site GUID:', spSiteId);
     const lists = await spGet('/sites/'+spSiteId+'/lists?$select=id,name,displayName');
     console.log('Lists:', lists.value ? lists.value.map(function(l){return l.name;}).join(', ') : JSON.stringify(lists).substring(0,200));
     const list = lists.value && lists.value.find(function(l){ return l.name===LIST_NAME||l.displayName===LIST_NAME; });
