@@ -1429,11 +1429,16 @@ function renderCalFull(){
     var evHtml=dayEvs.slice(0,3).map(function(ev){
       return '<div style="font-size:9px;background:'+TYPE_COLORS[ev.type]+';color:white;border-radius:3px;padding:1px 4px;margin-top:2px;overflow:hidden">'+ev.title+'</div>';
     }).join('');
-    html+='<div data-date="'+dateStr+'" data-d="'+d+'" onclick="var el=this;selectDayFull(el.getAttribute(\"data-date\"),parseInt(el.getAttribute(\"data-d\")))" style="min-height:60px;border-radius:8px;padding:6px;cursor:pointer;background:'+bg+';border:1px solid '+bc+';transition:all .15s">';
+    html+='<div class="cal-day-full" style="min-height:60px;border-radius:8px;padding:6px;cursor:pointer;background:'+bg+';border:1px solid '+bc+';transition:all .15s" data-date="'+dateStr+'" data-day="'+d+'">';
     html+='<div style="font-size:13px;font-weight:'+fw+';color:'+fc+'">'+d+'</div>';
     html+=evHtml+'</div>';
   }
   grid.innerHTML=html;
+  grid.querySelectorAll('.cal-day-full').forEach(function(el){
+    el.addEventListener('click', function(){
+      selectDayFull(this.getAttribute('data-date'), parseInt(this.getAttribute('data-day')));
+    });
+  });
 }
 
 // ─── NAVIGATION ───
