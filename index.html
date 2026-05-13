@@ -1873,11 +1873,14 @@ async function spPatch(endpoint, body){
 async function getSiteAndListId(){
   if(spSiteId && spListId) return true;
   try {
-    const site = await spGet('/sites/seguradoraalm.sharepoint.com:/sites/MARKETING-TVPSALM');
+    const site = await spGet('/sites/seguradoraalm.sharepoint.com:/sites/MARKETING-TVPSALM:');
+    console.log('Site response:', JSON.stringify(site).substring(0,200));
     spSiteId = site.id;
-    const lists = await spGet('/sites/'+spSiteId+'/lists');
-    const list = lists.value.find(l=>l.name===LIST_NAME||l.displayName===LIST_NAME);
+    const lists = await spGet('/sites/'+spSiteId+'/lists?$select=id,name,displayName');
+    console.log('Lists found:', lists.value ? lists.value.map(l=>l.name).join(', ') : 'none');
+    const list = lists.value && lists.value.find(function(l){ return l.name===LIST_NAME||l.displayName===LIST_NAME; });
     if(list) spListId = list.id;
+    console.log('List ID:', spListId);
     return !!(spSiteId && spListId);
   } catch(e) {
     console.error('getSiteAndListId error:', e);
@@ -1972,16 +1975,7 @@ async function setupSpList(){
     const ok = await getSiteAndListId();
     console.log('getSiteAndListId result:', ok, 'siteId:', spSiteId, 'listId:', spListId);
     if(!ok){ console.log('List not found, trying to create columns...'); return; }
-    // Try to add Valor column if not exists
-    try {
-      await spPost('/sites/'+spSiteId+'/lists/'+spListId+'/columns', {
-        name: 'Valor',
-        text: { allowMultipleLines: true, maxLength: 0 }
-      });
-      console.log('Valor column created!');
-    } catch(e) {
-      console.log('Valor column may already exist:', e.message);
-    }
+    console.log('Connected to SharePoint! Loading data...');
     await spLoadAll();
   } catch(e) {
     console.error('setupSpList error:', e);
