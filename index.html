@@ -1407,24 +1407,31 @@ document.getElementById('novo-prog-overlay').addEventListener('click', function(
 });
 
 function renderCalFull(){
-  const grid=document.getElementById('cal-grid-full');
-  const label=document.getElementById('cal-month-label-full');
+  var grid=document.getElementById('cal-grid-full');
+  var label=document.getElementById('cal-month-label-full');
   if(!grid||!label) return;
   label.textContent=MONTHS[calMonth]+' '+calYear;
-  const firstDay=new Date(calYear,calMonth,1).getDay();
-  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
-  const today=new Date();
-  let html='';
-  for(let i=0;i<firstDay;i++) html+=`<div style="height:60px"></div>`;
-  for(let d=1;d<=daysInMonth;d++){
-    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dayEvs=calEvents.filter(e=>e.date===dateStr);
-    const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
-    const evHtml=dayEvs.slice(0,3).map(ev=>`<div style="font-size:9px;background:${TYPE_COLORS[ev.type]};color:white;border-radius:3px;padding:1px 4px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ev.title}</div>`).join('');
-    html+=`<div onclick="selectDayFull('${dateStr}',${d})" style="min-height:60px;border-radius:8px;padding:6px;cursor:pointer;background:${isToday?'var(--b6)':'var(--white)'};border:1px solid ${isToday?'var(--b6)':'var(--bd)'};transition:all .15s" onmouseover="this.style.borderColor='var(--b4)'" onmouseout="this.style.borderColor='${isToday?'var(--b6)':'var(--bd)'}'">
-      <div style="font-size:13px;font-weight:${isToday?'700':'500'};color:${isToday?'#fff':'var(--t2)'}">${d}</div>
-      ${evHtml}
-    </div>`;
+  var firstDay=new Date(calYear,calMonth,1).getDay();
+  var daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  var today=new Date();
+  var html='';
+  for(var i=0;i<firstDay;i++) html+='<div style="height:60px"></div>';
+  for(var d=1;d<=daysInMonth;d++){
+    var mm=String(calMonth+1).padStart(2,'0');
+    var dd=String(d).padStart(2,'0');
+    var dateStr=calYear+'-'+mm+'-'+dd;
+    var dayEvs=calEvents.filter(function(e){return e.date===dateStr;});
+    var isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
+    var bg=isToday?'var(--b6)':'var(--white)';
+    var bc=isToday?'var(--b6)':'var(--bd)';
+    var fw=isToday?'700':'500';
+    var fc=isToday?'#fff':'var(--t2)';
+    var evHtml=dayEvs.slice(0,3).map(function(ev){
+      return '<div style="font-size:9px;background:'+TYPE_COLORS[ev.type]+';color:white;border-radius:3px;padding:1px 4px;margin-top:2px;overflow:hidden">'+ev.title+'</div>';
+    }).join('');
+    html+='<div onclick="selectDayFull(''+dateStr+'','+d+')" style="min-height:60px;border-radius:8px;padding:6px;cursor:pointer;background:'+bg+';border:1px solid '+bc+';transition:all .15s">';
+    html+='<div style="font-size:13px;font-weight:'+fw+';color:'+fc+'">'+d+'</div>';
+    html+=evHtml+'</div>';
   }
   grid.innerHTML=html;
 }
