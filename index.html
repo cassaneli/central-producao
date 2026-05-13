@@ -1714,10 +1714,12 @@ const msalConfig = {
 
 const msalInstance = new msal.PublicClientApplication(msalConfig);
 
-const SCOPES = ['User.Read', 'Sites.ReadWrite.All', 'Files.ReadWrite'];
-const SITE_URL = 'https://seguradoraalm-my.sharepoint.com/personal/patrick_cassaneli_almseguradora_com_br';
+const SCOPES = ['User.Read', 'Sites.ReadWrite.All', 'Files.ReadWrite', 'openid', 'profile'];
+const SITE_URL = 'https://seguradoraalm.sharepoint.com/sites/MARKETING-TVPSALM';
 const LIST_NAME = 'CentralProducao';
 const ADMIN_EMAIL_MS = 'patrick.cassaneli@almseguradora.com.br';
+let spSiteId = null;
+let spListId = null;
 
 let msToken = null;
 let msUser  = null;
@@ -1792,6 +1794,8 @@ function onAuthSuccess(){
   }
 
   loadSavedTotals(); renderEps(); renderCal(); renderTeam(); setDate(); renderTickets(); updateStats();
+  // Connect to SharePoint
+  setupSpList();
 }
 
 function showLoginScreen(){
@@ -1827,6 +1831,121 @@ async function spPatch(endpoint, body){
     body: JSON.stringify(body)
   });
   return res.json();
+}
+
+// ─── SHAREPOINT SYNC ───
+async function getSiteAndListId(){
+  if(spSiteId && spListId) return true;
+  try {
+    const site = await spGet('/sites/seguradoraalm.sharepoint.com:/sites/MARKETING-TVPSALM');
+    spSiteId = site.id;
+    const lists = await spGet('/sites/'+spSiteId+'/lists');
+    const list = lists.value.find(l=>l.name===LIST_NAME||l.displayName===LIST_NAME);
+    if(list) spListId = list.id;
+    return !!(spSiteId && spListId);
+  } catch(e) {
+    console.error('getSiteAndListId error:', e);
+    return false;
+  }
+}
+
+async function spSaveData(key, value){
+  try {
+    const ok = await getSiteAndListId();
+    if(!ok) return;
+    // Check if item exists
+    const existing = await spGet('/sites/'+spSiteId+'/lists/'+spListId+'/items?$filter=fields/Title eq ''+encodeURIComponent(key)+''&$select=id,fields');
+    if(existing.value && existing.value.length > 0){
+      const itemId = existing.value[0].id;
+      await spPatch('/sites/'+spSiteId+'/lists/'+spListId+'/items/'+itemId+'/fields', {
+        Title: key,
+        Valor: JSON.stringify(value)
+      });
+    } else {
+      await spPost('/sites/'+spSiteId+'/lists/'+spListId+'/items', {
+        fields: { Title: key, Valor: JSON.stringify(value) }
+      });
+    }
+  } catch(e) {
+    console.error('spSaveData error:', e);
+  }
+}
+
+async function spLoadData(key){
+  try {
+    const ok = await getSiteAndListId();
+    if(!ok) return null;
+    const result = await spGet('/sites/'+spSiteId+'/lists/'+spListId+'/items?$filter=fields/Title eq ''+encodeURIComponent(key)+''&$select=fields&$expand=fields');
+    if(result.value && result.value.length > 0){
+      const raw = result.value[0].fields.Valor;
+      return raw ? JSON.parse(raw) : null;
+    }
+    return null;
+  } catch(e) {
+    console.error('spLoadData error:', e);
+    return null;
+  }
+}
+
+async function spLoadAll(){
+  try {
+    const ok = await getSiteAndListId();
+    if(!ok) return;
+    
+    // Load tickets
+    const spTickets = await spLoadData('tickets');
+    if(spTickets) { tickets = spTickets; saveTickets(); }
+    
+    // Load calEvents
+    const spCalEvents = await spLoadData('calEvents');
+    if(spCalEvents) { calEvents = spCalEvents; saveCalEvents(); }
+    
+    // Load customProgramas
+    const spCustomProgs = await spLoadData('customProgramas');
+    if(spCustomProgs) { customProgramas = spCustomProgs; localStorage.setItem('customProgramas', JSON.stringify(customProgramas)); }
+    
+    // Load ep_totals
+    const spTotals = await spLoadData('ep_totals');
+    if(spTotals) { spTotals.forEach((t,i)=>{ if(programas[i]) programas[i].total = t; }); localStorage.setItem('ep_totals', JSON.stringify(spTotals)); }
+
+    renderEps(); renderCal(); renderTeam(); renderTickets(); updateStats();
+    console.log('SharePoint data loaded!');
+  } catch(e) {
+    console.error('spLoadAll error:', e);
+  }
+}
+
+// Override save functions to also sync to SharePoint
+const _saveTickets = saveTickets;
+function saveTickets(){ 
+  localStorage.setItem('tickets', JSON.stringify(tickets));
+  spSaveData('tickets', tickets).catch(()=>{});
+}
+
+const _saveCalEvents = saveCalEvents;
+function saveCalEvents(){
+  localStorage.setItem('calEvents', JSON.stringify(calEvents));
+  spSaveData('calEvents', calEvents).catch(()=>{});
+}
+
+async function setupSpList(){
+  try {
+    const ok = await getSiteAndListId();
+    if(!ok){ console.log('List not found, trying to create columns...'); return; }
+    // Try to add Valor column if not exists
+    try {
+      await spPost('/sites/'+spSiteId+'/lists/'+spListId+'/columns', {
+        name: 'Valor',
+        text: { allowMultipleLines: true, maxLength: 0 }
+      });
+      console.log('Valor column created!');
+    } catch(e) {
+      console.log('Valor column may already exist:', e.message);
+    }
+    await spLoadAll();
+  } catch(e) {
+    console.error('setupSpList error:', e);
+  }
 }
 
 // Init
