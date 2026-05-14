@@ -780,7 +780,8 @@ main{padding:32px 40px;flex:1}
           <label class="fl">Tipo de arquivo</label>
           <select id="up-type" class="fi" onchange="updateUploadPathPreview()">
             <option value="foto">📸 Fotos</option>
-            <option value="video">🎬 Vídeos</option>
+            <option value="video_editado">🎬 Vídeo Editado</option>
+            <option value="bruto">📦 Arquivos Brutos</option>
           </select>
         </div>
       </div>
@@ -809,7 +810,7 @@ main{padding:32px 40px;flex:1}
   <div id="modal-inner">
     <div id="modal-box">
       <div class="mt">Novo episódio</div>
-      <div class="ms">Preencha os dados para registrar no controle</div>
+      <div class="ms">Preencha os dados — as pastas serão criadas automaticamente no SharePoint</div>
       <div class="fg">
         <label class="fl">Programa</label>
         <select id="ep-prog-select" class="fi">
@@ -819,49 +820,43 @@ main{padding:32px 40px;flex:1}
       <div class="fr">
         <div class="fg">
           <label class="fl">Número do episódio</label>
-          <input type="text" class="fi" placeholder="Ep. 48">
+          <input type="number" id="ep-num-input" class="fi" placeholder="1">
         </div>
         <div class="fg">
-          <label class="fl">Responsável</label>
-          <select class="fi">
-            <option>Selecione...</option>
-            <option>Patrick Cassaneli</option>
-            <option>Ygor Xavier</option>
-            <option>Maria Eduarda Carneiro</option>
-          </select>
+          <label class="fl">Nome do convidado</label>
+          <input type="text" id="ep-convidado-input" class="fi" placeholder="Ex: João Silva">
         </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Responsável</label>
+        <select id="ep-resp-input" class="fi">
+          <option>Selecione...</option>
+          <option>Patrick Cassaneli</option>
+          <option>Ygor Xavier</option>
+          <option>Maria Eduarda Carneiro</option>
+        </select>
       </div>
       <div class="fr">
         <div class="fg">
           <label class="fl">Data de gravação</label>
-          <input type="date" class="fi">
+          <input type="date" id="ep-data-grav" class="fi">
         </div>
         <div class="fg">
           <label class="fl">Vai ao ar em</label>
-          <input type="date" class="fi">
-        </div>
-      </div>
-      <div class="fg">
-        <label class="fl">Próxima gravação prevista</label>
-        <input type="date" class="fi">
-      </div>
-      <div class="fr">
-        <div class="fg">
-          <label class="fl">Fotos do programa</label>
-          <input type="file" class="fi" accept="image/*" multiple style="padding:7px 10px;font-size:11px">
-        </div>
-        <div class="fg">
-          <label class="fl">Arquivo editável</label>
-          <input type="file" class="fi" style="padding:7px 10px;font-size:11px">
+          <input type="date" id="ep-data-ar" class="fi">
         </div>
       </div>
       <div class="fg">
         <label class="fl">Observações</label>
-        <input type="text" class="fi" placeholder="Ex: Entrevistado confirmado, aguardar liberação">
+        <input type="text" id="ep-obs-input" class="fi" placeholder="Ex: Entrevistado confirmado, aguardar liberação">
+      </div>
+      <div style="background:var(--b0);border:1px solid var(--b1);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:600;color:var(--tvps-glow);margin-bottom:4px;font-family:'IBM Plex Mono',monospace">📁 Pastas que serão criadas no SharePoint</div>
+        <div id="ep-folder-preview" style="font-size:12px;color:var(--t2);font-family:'IBM Plex Mono',monospace">Materiais TVPS / Programa / EpXX_Convidado / Fotos, Autorizações, Vídeo Editado, Brutos</div>
       </div>
       <div class="ma">
         <button class="btn-c" onclick="closeModal()">Cancelar</button>
-        <button class="btn-p" onclick="saveEp()">Salvar episódio</button>
+        <button class="btn-p" onclick="saveEp()">✓ Criar episódio</button>
       </div>
     </div>
   </div>
@@ -1043,23 +1038,98 @@ function openModal(){
   if(sel){
     const allProgs = getAllProgramas();
     sel.innerHTML = '<option value="">Selecione o programa...</option>' +
-      allProgs.map((p,i) => `<option value="${i}">${p.n}</option>`).join('');
+      allProgs.map((p,i) => '<option value="'+i+'">'+p.n+'</option>').join('');
+    sel.onchange = updateEpFolderPreview;
   }
+  var ci = document.getElementById('ep-convidado-input');
+  if(ci) ci.oninput = updateEpFolderPreview;
+  var ni = document.getElementById('ep-num-input');
+  if(ni) ni.oninput = updateEpFolderPreview;
   document.getElementById('modal-overlay').classList.add('open');
   document.body.style.overflow='hidden';
+  updateEpFolderPreview();
 }
 function closeModal(){
   document.getElementById('modal-overlay').classList.remove('open');
   document.body.style.overflow='';
 }
-function saveEp(){
+async function saveEp(){
   const sel = document.getElementById('ep-prog-select');
   const progIdx = sel ? parseInt(sel.value) : -1;
   if(isNaN(progIdx) || progIdx < 0){ alert('Selecione o programa!'); return; }
+  const allProgs = getAllProgramas();
+  const prog = allProgs[progIdx];
+  const epNum = prog.total + 1;
+  const convidado = document.getElementById('ep-convidado-input').value.trim();
+  const resp = document.getElementById('ep-resp-input').value;
+  const dataGrav = document.getElementById('ep-data-grav').value;
+  const dataAr = document.getElementById('ep-data-ar').value;
+  const obs = document.getElementById('ep-obs-input').value.trim();
+
+  // Save episode metadata
+  var epData = getEpData(progIdx, epNum);
+  epData.convidado = convidado;
+  epData.resp = resp;
+  epData.dataGrav = dataGrav;
+  epData.dataAr = dataAr;
+  epData.obs = obs;
+  epData.autorizacoes = epData.autorizacoes || [];
+  epData.fotos = epData.fotos || [];
+  epData.links = epData.links || [];
+  epData.videoEditado = epData.videoEditado || [];
+  epData.brutos = epData.brutos || [];
+  saveEpData(progIdx, epNum, epData);
+
+  // Update program total
+  addNovoEpisodio(progIdx);
+
+  // Create SP folders in background
+  if(msToken){
+    createSpFolders(prog.n, epNum, convidado).then(function(){
+      console.log('Folders created for Ep'+epNum);
+    });
+  }
+
   closeModal();
-  // navigate to episodes and open the selected program
   navTo('episodios');
-  setTimeout(()=> openPrograma(progIdx), 80);
+  setTimeout(function(){ openEpisodio(progIdx, epNum); }, 100);
+}
+
+async function createSpFolders(progName, epNum, convidado){
+  try {
+    var epFolder = 'Ep' + String(epNum).padStart(2,'0') + (convidado ? '_' + convidado : '');
+    var basePath = SP_ROOT_FOLDER + '/' + progName + '/' + epFolder;
+    var subFolders = ['Fotos', 'Autorizacoes', 'Video Editado', 'Arquivos Brutos'];
+    for(var i=0; i<subFolders.length; i++){
+      var folderPath = basePath + '/' + subFolders[i];
+      // Create folder by uploading a placeholder and using folder API
+      await fetch('https://graph.microsoft.com/v1.0/sites/'+spSiteId+'/drive/root:/'+encodeURIComponent(folderPath)+':/children', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer '+msToken,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: '.keep',
+          file: {},
+          '@microsoft.graph.conflictBehavior': 'replace'
+        })
+      });
+    }
+    console.log('SP folders created:', basePath);
+  } catch(e) {
+    console.error('createSpFolders error:', e);
+  }
+}
+
+function updateEpFolderPreview(){
+  var sel = document.getElementById('ep-prog-select');
+  var progName = sel && sel.value !== '' ? getAllProgramas()[parseInt(sel.value)].n : 'Programa';
+  var epNum = document.getElementById('ep-num-input').value || 'XX';
+  var convidado = document.getElementById('ep-convidado-input').value.trim();
+  var epStr = 'Ep' + String(epNum).padStart(2,'0') + (convidado ? '_'+convidado : '');
+  var preview = document.getElementById('ep-folder-preview');
+  if(preview) preview.textContent = 'Materiais TVPS / ' + progName + ' / ' + epStr + ' / Fotos, Autorizações, Vídeo Editado, Brutos';
 }
 
 document.getElementById('modal-overlay').addEventListener('click',function(e){
@@ -1627,12 +1697,16 @@ function openEpisodio(progIdx, epNum){
     <!-- TABS -->
     <div style="background:var(--white);border:1px solid rgba(160,192,240,.5);border-radius:14px;overflow:hidden;box-shadow:var(--sh)">
       <div style="display:flex;border-bottom:1px solid rgba(160,192,240,.3);background:#f8faff;overflow-x:auto">
-        <button id="det-tab-autorizacao" onclick="switchDetTab(${progIdx},${epNum},'autorizacao')" style="padding:12px 20px;border:none;border-bottom:2px solid var(--tvps-glow);background:transparent;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--tvps-glow);cursor:pointer;white-space:nowrap">📄 Autorização de Imagem</button>
-        <button id="det-tab-fotos" onclick="switchDetTab(${progIdx},${epNum},'fotos')" style="padding:12px 20px;border:none;border-bottom:2px solid transparent;background:transparent;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--mu);cursor:pointer;white-space:nowrap">📸 Fotos da Gravação</button>
-        <button id="det-tab-links" onclick="switchDetTab(${progIdx},${epNum},'links')" style="padding:12px 20px;border:none;border-bottom:2px solid transparent;background:transparent;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--mu);cursor:pointer;white-space:nowrap">▶ Link YouTube</button>
+        <button id="det-tab-fotos" onclick="switchDetTab(${progIdx},${epNum},'fotos')" style="padding:12px 16px;border:none;border-bottom:2px solid var(--tvps-glow);background:transparent;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--tvps-glow);cursor:pointer;white-space:nowrap">📸 Fotos</button>
+        <button id="det-tab-autorizacao" onclick="switchDetTab(${progIdx},${epNum},'autorizacao')" style="padding:12px 16px;border:none;border-bottom:2px solid transparent;background:transparent;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--mu);cursor:pointer;white-space:nowrap">📄 Autorizações</button>
+        <button id="det-tab-video" onclick="switchDetTab(${progIdx},${epNum},'video')" style="padding:12px 16px;border:none;border-bottom:2px solid transparent;background:transparent;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--mu);cursor:pointer;white-space:nowrap">🎬 Vídeo Editado</button>
+        <button id="det-tab-brutos" onclick="switchDetTab(${progIdx},${epNum},'brutos')" style="padding:12px 16px;border:none;border-bottom:2px solid transparent;background:transparent;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--mu);cursor:pointer;white-space:nowrap">📦 Arquivos Brutos</button>
+        <button id="det-tab-links" onclick="switchDetTab(${progIdx},${epNum},'links')" style="padding:12px 16px;border:none;border-bottom:2px solid transparent;background:transparent;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--mu);cursor:pointer;white-space:nowrap">▶ YouTube</button>
       </div>
-      <div id="det-content-autorizacao" style="padding:20px 22px"></div>
-      <div id="det-content-fotos" style="display:none;padding:20px 22px"></div>
+      <div id="det-content-fotos" style="padding:20px 22px"></div>
+      <div id="det-content-autorizacao" style="display:none;padding:20px 22px"></div>
+      <div id="det-content-video" style="display:none;padding:20px 22px"></div>
+      <div id="det-content-brutos" style="display:none;padding:20px 22px"></div>
       <div id="det-content-links" style="display:none;padding:20px 22px"></div>
     </div>`;
 
@@ -1641,7 +1715,7 @@ function openEpisodio(progIdx, epNum){
 }
 
 function switchDetTab(progIdx, epNum, tab){
-  ['autorizacao','fotos','links'].forEach(t=>{
+  ['fotos','autorizacao','video','brutos','links'].forEach(t=>{
     const c=document.getElementById('det-content-'+t);
     const b=document.getElementById('det-tab-'+t);
     if(c) c.style.display=t===tab?'block':'none';
@@ -1683,6 +1757,45 @@ function toggleEpStatus(pi, en, key){
 
 function renderDetData(progIdx, epNum){
   const data = getEpData(progIdx, epNum);
+  if(!data.videoEditado) data.videoEditado = [];
+  if(!data.brutos) data.brutos = [];
+
+  // FOTOS
+  const fotEl = document.getElementById('det-content-fotos');
+  if(fotEl){
+    var fotBtns = '<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px">' +
+      '<button class="btn-p" style="padding:7px 16px;font-size:12px;background:linear-gradient(135deg,#16a34a,#15803d)" onclick="openUploadFoto('+progIdx+','+epNum+')">⬆ Upload</button>' +
+      '<button class="btn-p" style="padding:7px 16px;font-size:12px" onclick="addFoto('+progIdx+','+epNum+')">＋ Link</button></div>';
+    fotEl.innerHTML = fotBtns +
+    (data.fotos.length===0
+      ? '<div style="text-align:center;padding:32px;color:var(--mu);font-size:13px;font-style:italic;background:var(--s2);border-radius:10px">Nenhuma foto cadastrada</div>'
+      : '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">'+
+        data.fotos.map(function(f,j){ return '<div style="background:var(--s2);border-radius:10px;padding:14px;position:relative"><div style="font-size:12px;font-weight:600;color:var(--tvps-deep);margin-bottom:6px">📸 '+f.nome+'</div><a href="'+f.link+'" target="_blank" style="font-size:11px;color:var(--tvps-glow)">Ver ↗</a><button onclick="removeFoto('+progIdx+','+epNum+','+j+')" style="position:absolute;top:8px;right:8px;background:var(--rb);border:none;color:var(--rn);border-radius:5px;padding:2px 7px;cursor:pointer;font-size:11px">✕</button></div>'; }).join('')+'</div>');
+  }
+
+  // VÍDEO EDITADO
+  const vidEl = document.getElementById('det-content-video');
+  if(vidEl){
+    var vidBtns = '<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px">' +
+      '<button class="btn-p" style="padding:7px 16px;font-size:12px;background:linear-gradient(135deg,#16a34a,#15803d)" onclick="openUploadVid('+progIdx+','+epNum+')">⬆ Upload</button>' +
+      '<button class="btn-p" style="padding:7px 16px;font-size:12px" onclick="addVideoEditado('+progIdx+','+epNum+')">＋ Link</button></div>';
+    vidEl.innerHTML = vidBtns +
+    (data.videoEditado.length===0
+      ? '<div style="text-align:center;padding:32px;color:var(--mu);font-size:13px;font-style:italic;background:var(--s2);border-radius:10px">Nenhum vídeo editado cadastrado</div>'
+      : data.videoEditado.map(function(v,j){ return '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--s2);border-radius:10px;margin-bottom:8px"><div><div style="font-size:13px;font-weight:700;color:var(--tvps-deep)">🎬 '+v.nome+'</div><a href="'+v.link+'" target="_blank" style="font-size:11px;color:var(--tvps-glow)">'+v.link+'</a></div><button onclick="removeVideoEditado('+progIdx+','+epNum+','+j+')" style="background:var(--rb);border:none;color:var(--rn);border-radius:6px;padding:4px 9px;cursor:pointer;font-size:12px">✕</button></div>'; }).join(''));
+  }
+
+  // ARQUIVOS BRUTOS
+  const brutEl = document.getElementById('det-content-brutos');
+  if(brutEl){
+    var brutBtns = '<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px">' +
+      '<button class="btn-p" style="padding:7px 16px;font-size:12px;background:linear-gradient(135deg,#16a34a,#15803d)" onclick="openUploadBruto('+progIdx+','+epNum+')">⬆ Upload</button>' +
+      '<button class="btn-p" style="padding:7px 16px;font-size:12px" onclick="addBruto('+progIdx+','+epNum+')">＋ Link</button></div>';
+    brutEl.innerHTML = brutBtns +
+    (data.brutos.length===0
+      ? '<div style="text-align:center;padding:32px;color:var(--mu);font-size:13px;font-style:italic;background:var(--s2);border-radius:10px">Nenhum arquivo bruto cadastrado</div>'
+      : data.brutos.map(function(b,j){ return '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--s2);border-radius:10px;margin-bottom:8px"><div><div style="font-size:13px;font-weight:700;color:var(--tvps-deep)">📦 '+b.nome+'</div><a href="'+b.link+'" target="_blank" style="font-size:11px;color:var(--tvps-glow)">'+b.link+'</a></div><button onclick="removeBruto('+progIdx+','+epNum+','+j+')" style="background:var(--rb);border:none;color:var(--rn);border-radius:6px;padding:4px 9px;cursor:pointer;font-size:12px">✕</button></div>'; }).join(''));
+  }
 
   // AUTORIZAÇÕES
   const autEl = document.getElementById('det-content-autorizacao');
@@ -1703,23 +1816,7 @@ function renderDetData(progIdx, epNum){
         </div>`).join(''));
   }
 
-  // FOTOS
-  const fotEl = document.getElementById('det-content-fotos');
-  if(fotEl){
-    fotEl.innerHTML = `<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px">
-      <button class="btn-p" style="padding:7px 16px;font-size:12px;background:linear-gradient(135deg,#16a34a,#15803d)" onclick="openUploadModal(${progIdx},${epNum});document.getElementById('up-type').value='foto'">⬆ Upload SharePoint</button>
-      <button class="btn-p" style="padding:7px 16px;font-size:12px" onclick="addFoto(${progIdx},${epNum})">＋ Adicionar link</button>
-    </div>` +
-    (data.fotos.length===0
-      ? '<div style="text-align:center;padding:32px;color:var(--mu);font-size:13px;font-style:italic;background:var(--s2);border-radius:10px">Nenhuma foto cadastrada</div>'
-      : '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">'+
-        data.fotos.map((f,j)=>`
-          <div style="background:var(--s2);border-radius:10px;padding:14px;position:relative">
-            <div style="font-size:12px;font-weight:600;color:var(--tvps-deep);margin-bottom:6px">📸 ${f.nome}</div>
-            <a href="${f.link}" target="_blank" style="font-size:11px;color:var(--tvps-glow)">Ver foto ↗</a>
-            <button onclick="removeFoto(${progIdx},${epNum},${j})" style="position:absolute;top:8px;right:8px;background:var(--rb);border:none;color:var(--rn);border-radius:5px;padding:2px 7px;cursor:pointer;font-size:11px">✕</button>
-          </div>`).join('')+'</div>');
-  }
+  // FOTOS handled above
 
   // LINKS YOUTUBE
   const lnkEl = document.getElementById('det-content-links');
@@ -1746,6 +1843,13 @@ function addAutorizacao(pi,en){ const nome=prompt('Nome do convidado:'); if(!nom
 function removeAutorizacao(pi,en,j){ if(!confirm('Remover?')) return; const d=getEpData(pi,en); d.autorizacoes.splice(j,1); saveEpData(pi,en,d); renderDetData(pi,en); }
 function addFoto(pi,en){ const nome=prompt('Descrição da foto:'); if(!nome) return; const link=prompt('Link (OneDrive, Google Drive, etc):'); if(!link) return; const d=getEpData(pi,en); d.fotos.push({nome,link}); saveEpData(pi,en,d); renderDetData(pi,en); }
 function removeFoto(pi,en,j){ if(!confirm('Remover?')) return; const d=getEpData(pi,en); d.fotos.splice(j,1); saveEpData(pi,en,d); renderDetData(pi,en); }
+function openUploadFoto(pi,en){ openUploadModal(pi,en); setTimeout(function(){ document.getElementById('up-type').value='foto'; updateUploadPathPreview(); },50); }
+function openUploadVid(pi,en){ openUploadModal(pi,en); setTimeout(function(){ document.getElementById('up-type').value='video_editado'; updateUploadPathPreview(); },50); }
+function openUploadBruto(pi,en){ openUploadModal(pi,en); setTimeout(function(){ document.getElementById('up-type').value='bruto'; updateUploadPathPreview(); },50); }
+function addVideoEditado(pi,en){ var nome=prompt('Nome do arquivo:'); if(!nome) return; var link=prompt('Link (SharePoint, OneDrive, etc):'); if(!link) return; var d=getEpData(pi,en); if(!d.videoEditado) d.videoEditado=[]; d.videoEditado.push({nome,link}); saveEpData(pi,en,d); renderDetData(pi,en); }
+function removeVideoEditado(pi,en,j){ if(!confirm('Remover?')) return; var d=getEpData(pi,en); d.videoEditado.splice(j,1); saveEpData(pi,en,d); renderDetData(pi,en); }
+function addBruto(pi,en){ var nome=prompt('Nome do arquivo:'); if(!nome) return; var link=prompt('Link (SharePoint, OneDrive, etc):'); if(!link) return; var d=getEpData(pi,en); if(!d.brutos) d.brutos=[]; d.brutos.push({nome,link}); saveEpData(pi,en,d); renderDetData(pi,en); }
+function removeBruto(pi,en,j){ if(!confirm('Remover?')) return; var d=getEpData(pi,en); d.brutos.splice(j,1); saveEpData(pi,en,d); renderDetData(pi,en); }
 function addYoutubeLink(pi,en){ const titulo=prompt('Título no YouTube:'); if(!titulo) return; const url=prompt('Link do YouTube:'); if(!url) return; const d=getEpData(pi,en); d.links.push({titulo,url}); saveEpData(pi,en,d); renderDetData(pi,en); }
 function removeLink(pi,en,j){ if(!confirm('Remover?')) return; const d=getEpData(pi,en); d.links.splice(j,1); saveEpData(pi,en,d); renderDetData(pi,en); }
 
@@ -2054,7 +2158,7 @@ async function spUploadFile(progName, epNum, convidado, fileType, file){
     if(!msToken) await acquireToken();
     // Build folder path: Materiais TVPS/Programa/Fotos|Videos/EpXX_Convidado
     var epFolder = 'Ep' + String(epNum).padStart(2,'0') + (convidado ? '_' + convidado : '');
-    var typeFolder = fileType === 'foto' ? 'Fotos' : 'Videos';
+    var typeFolder = fileType === 'foto' ? 'Fotos' : (fileType === 'video_editado' ? 'Video Editado' : (fileType === 'bruto' ? 'Arquivos Brutos' : 'Videos'));
     var folderPath = SP_ROOT_FOLDER + '/' + progName + '/' + typeFolder + '/' + epFolder;
     var fileName = file.name;
     var uploadUrl = 'https://graph.microsoft.com/v1.0/sites/' + spSiteId + '/drive/root:/' + encodeURIComponent(folderPath) + '/' + encodeURIComponent(fileName) + ':/content';
@@ -2085,7 +2189,8 @@ function updateUploadPathPreview(){
   var prog = document.getElementById('up-prog').value || 'Programa';
   var ep = document.getElementById('up-ep').value || '00';
   var convidado = document.getElementById('up-convidado').value.trim();
-  var type = document.getElementById('up-type').value === 'foto' ? 'Fotos' : 'Videos';
+  var typeVal = document.getElementById('up-type').value;
+  var type = typeVal === 'foto' ? 'Fotos' : (typeVal === 'video_editado' ? 'Video Editado' : (typeVal === 'bruto' ? 'Arquivos Brutos' : 'Videos'));
   var epStr = 'Ep' + String(ep).padStart(2,'0') + (convidado ? '_' + convidado : '');
   var preview = document.getElementById('up-path-preview');
   if(preview) preview.textContent = 'Materiais TVPS / ' + prog + ' / ' + type + ' / ' + epStr;
@@ -2133,6 +2238,12 @@ async function doUpload(){
     var epData = getEpData(progIdx, epNum);
     if(fileType === 'foto'){
       successLinks.forEach(function(f){ epData.fotos.push({nome: f.nome, link: f.link}); });
+    } else if(fileType === 'video_editado'){
+      if(!epData.videoEditado) epData.videoEditado = [];
+      successLinks.forEach(function(f){ epData.videoEditado.push({nome: f.nome, link: f.link}); });
+    } else if(fileType === 'bruto'){
+      if(!epData.brutos) epData.brutos = [];
+      successLinks.forEach(function(f){ epData.brutos.push({nome: f.nome, link: f.link}); });
     }
     saveEpData(progIdx, epNum, epData);
     statusEl.textContent = '✓ ' + successLinks.length + ' arquivo(s) enviado(s) com sucesso!';
