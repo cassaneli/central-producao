@@ -1873,20 +1873,21 @@ async function spPatch(endpoint, body){
 async function getSiteAndListId(){
   if(spSiteId && spListId) return true;
   try {
-    // Try different site URL formats
     var siteResp = await spGet('/sites/seguradoraalm.sharepoint.com:/sites/MARKETING-TVPSALM:');
-    console.log('Site response:', JSON.stringify(siteResp).substring(0,300));
-    if(siteResp.error) { console.error('Site error:', siteResp.error); return false; }
-    // Extract just the site GUID (3rd part of compound ID: hostname,siteId,webId)
-    var rawId = siteResp.id || '';
-    var idParts = rawId.split(',');
-    spSiteId = idParts.length >= 3 ? idParts[1] : (idParts.length >= 2 ? idParts[1] : rawId);
-    console.log('Using Site GUID:', spSiteId);
-    const lists = await spGet('/sites/'+spSiteId+'/lists?$select=id,name,displayName');
-    console.log('Lists:', lists.value ? lists.value.map(function(l){return l.name;}).join(', ') : JSON.stringify(lists).substring(0,200));
-    const list = lists.value && lists.value.find(function(l){ return l.name===LIST_NAME||l.displayName===LIST_NAME; });
+    console.log('Site response:', JSON.stringify(siteResp).substring(0,200));
+    if(siteResp.error){ console.error('Site error:', siteResp.error); return false; }
+    spSiteId = siteResp.id;
+    // Try full compound ID first, then just GUID
+    var listsResp = await spGet('/sites/'+spSiteId+'/lists?$select=id,name,displayName');
+    if(!listsResp.value){
+      var guid = spSiteId.split(',')[1] || spSiteId;
+      spSiteId = guid;
+      listsResp = await spGet('/sites/'+guid+'/lists?$select=id,name,displayName');
+    }
+    console.log('Lists:', listsResp.value ? listsResp.value.map(function(l){return l.name;}).join(', ') : JSON.stringify(listsResp).substring(0,200));
+    var list = listsResp.value && listsResp.value.find(function(l){ return l.name===LIST_NAME||l.displayName===LIST_NAME; });
     if(list) spListId = list.id;
-    console.log('Site ID:', spSiteId, 'List ID:', spListId);
+    console.log('Final - Site ID:', spSiteId, 'List ID:', spListId);
     return !!(spSiteId && spListId);
   } catch(e) {
     console.error('getSiteAndListId error:', e);
