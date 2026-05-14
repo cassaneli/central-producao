@@ -344,23 +344,8 @@ main{padding:32px 40px;flex:1}
             <div class="ct">Pipeline de Entrega</div>
             <span class="badge by">Em andamento</span>
           </div>
-          <div style="font-size:13px;color:var(--mu);margin-bottom:20px">
-            <strong style="color:var(--b9)">A Frequência do Som — Ep. 02</strong> · <span style="color:var(--b6);font-weight:600">Patrick C.</span>
-          </div>
-          <div class="pipe">
-            <div class="ps"><div class="pd done">✓</div><div class="pl">Gravação</div></div>
-            <div class="ps"><div class="pd done">✓</div><div class="pl">Edição</div></div>
-            <div class="ps"><div class="pd done">✓</div><div class="pl">Conversão</div></div>
-            <div class="ps"><div class="pd active">⬆</div><div class="pl">Bucket</div></div>
-            <div class="ps"><div class="pd empty"></div><div class="pl">Metadados</div></div>
-            <div class="ps"><div class="pd empty"></div><div class="pl">No ar</div></div>
-          </div>
-          <div style="margin-top:18px">
-            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin-bottom:4px">
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em">Progresso</span>
-              <span style="color:var(--b6);font-weight:600">66%</span>
-            </div>
-            <div class="pb"><div class="pf" style="width:66%"></div></div>
+          <div id="pipeline-content">
+            <div style="text-align:center;padding:20px;color:var(--mu);font-size:13px">Carregando pipeline...</div>
           </div>
         </div>
       </div>
@@ -1401,8 +1386,8 @@ function updateStats(){
   el('stat-gravacoes', gravacoes);
 }
 
-function getEpStatus(pi,ep){ return JSON.parse(localStorage.getItem('epstatus_'+pi+'_'+ep)||'{"c":"done","b":"done","m":"done"}'); }
-function saveEpStatus(pi,ep,data){ localStorage.setItem('epstatus_'+pi+'_'+ep,JSON.stringify(data)); updateStats(); }
+function getEpStatus(pi,ep){ return JSON.parse(localStorage.getItem('epstatus_'+pi+'_'+ep)||'{"c":"pend","b":"pend","m":"pend"}'); }
+function saveEpStatus(pi,ep,data){ localStorage.setItem('epstatus_'+pi+'_'+ep,JSON.stringify(data)); updateStats(); renderPipeline(); }
 
 // ─── ADMIN SYSTEM ───
 // IMPORTANT: When Azure AD is integrated, replace password check with:
@@ -1555,6 +1540,69 @@ function renderCalFull(){
   });
 }
 
+// ─── PIPELINE ───
+function renderPipeline(){
+  var el = document.getElementById('pipeline-content');
+  if(!el) return;
+  var allProgs = getAllProgramas();
+  
+  // Collect last 5 episodes across all programs
+  var recentEps = [];
+  allProgs.forEach(function(p, pi){
+    for(var en = p.total; en >= 1 && recentEps.length < 20; en--){
+      var epData = getEpData(pi, en);
+      var st = getEpStatus(pi, en);
+      recentEps.push({
+        progName: p.n,
+        progIdx: pi,
+        epNum: en,
+        resp: epData.resp || p.r,
+        convidado: epData.convidado || '',
+        c: st.c, b: st.b, m: st.m,
+        dataGrav: epData.dataGrav || '',
+        dataAr: epData.dataAr || ''
+      });
+    }
+  });
+  
+  // Sort by most recent (highest ep number first) and take last 5
+  recentEps = recentEps.slice(0,5);
+  
+  if(recentEps.length === 0){
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mu);font-size:13px;font-style:italic">Nenhum episódio cadastrado ainda</div>';
+    return;
+  }
+
+  el.innerHTML = recentEps.map(function(ep){
+    var pct = ((ep.c==='done'?1:0)+(ep.b==='done'?1:0)+(ep.m==='done'?1:0)) / 3 * 100;
+    var pctStr = Math.round(pct) + '%';
+    var pctColor = pct===100?'#22c55e':(pct>0?'var(--tvps-glow)':'var(--mu)');
+    var epLabel = 'Ep'+String(ep.epNum).padStart(2,'0')+(ep.convidado?' — '+ep.convidado:'');
+    
+    function pdClass(val){ return val==='done'?'done':(val==='pend'?'active':'empty'); }
+    function pdIcon(val){ return val==='done'?'✓':(val==='pend'?'…':''); }
+    
+    return '<div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--bd)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
+        '<div>' +
+          '<div style="font-size:13px;font-weight:700;color:var(--b9)">' + ep.progName + '</div>' +
+          '<div style="font-size:11px;color:var(--mu);margin-top:2px">' + epLabel + ' &middot; ' + ep.resp + '</div>' +
+        '</div>' +
+        '<span style="font-size:12px;font-weight:700;color:'+pctColor+'">'+pctStr+'</span>' +
+      '</div>' +
+      '<div class="pipe" style="margin-bottom:10px">' +
+        '<div class="ps"><div class="pd done">✓</div><div class="pl">Gravação</div></div>' +
+        '<div class="ps"><div class="pd done">✓</div><div class="pl">Edição</div></div>' +
+        '<div class="ps"><div class="pd '+pdClass(ep.c)+'">'+pdIcon(ep.c)+'</div><div class="pl">Conv.</div></div>' +
+        '<div class="ps"><div class="pd '+pdClass(ep.b)+'">'+pdIcon(ep.b)+'</div><div class="pl">Bucket</div></div>' +
+        '<div class="ps"><div class="pd '+pdClass(ep.m)+'">'+pdIcon(ep.m)+'</div><div class="pl">Meta.</div></div>' +
+        '<div class="ps"><div class="pd '+(pct===100?'done':'empty')+'">'+(pct===100?'✓':'')+'</div><div class="pl">No ar</div></div>' +
+      '</div>' +
+      '<div class="pb"><div class="pf" style="width:'+pctStr+'"></div></div>' +
+    '</div>';
+  }).join('');
+}
+
 // ─── NAVIGATION ───
 const SECTIONS=['dashboard','episodios','calendario','upload','chamados'];
 const SEC_TITLES={dashboard:'Dashboard',episodios:'Episódios',calendario:'Calendário Editorial',upload:'Upload & Materiais',chamados:'Chamados & Ocorrências'};
@@ -1570,6 +1618,7 @@ function navTo(sec){
   const titleEl=document.getElementById('pg-title-main');
   if(titleEl) titleEl.childNodes[0].textContent=SEC_TITLES[sec]+' ';
   if(sec==='episodios') setTimeout(renderEpsFull, 50);
+  if(sec==='dashboard') renderPipeline();
   if(sec==='chamados') renderTickets();
   if(sec==='calendario') renderCalFull();
   if(sec==='upload') renderTeamUpload();
@@ -1685,7 +1734,7 @@ function openEpisodio(progIdx, epNum){
       <div>
         <div style="font-size:11px;opacity:.7;font-family:'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">${p.n}</div>
         <div style="font-size:22px;font-weight:700">Episódio ${String(epNum).padStart(2,'0')}</div>
-        <div style="font-size:12px;opacity:.8;margin-top:4px">Responsável: ${p.r}</div>
+        <div style="font-size:12px;opacity:.8;margin-top:4px">Responsável: ${(getEpData(progIdx,epNum).resp||p.r)}</div>
       </div>
       <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:700;opacity:.2">${String(epNum).padStart(2,'0')}</div>
     </div>
@@ -1982,7 +2031,7 @@ function onAuthSuccess(){
     showAdminToast();
   }
 
-  loadSavedTotals(); renderEps(); renderCal(); renderTeam(); setDate(); renderTickets(); updateStats();
+  loadSavedTotals(); renderEps(); renderCal(); renderTeam(); setDate(); renderTickets(); updateStats(); renderPipeline();
   // Connect to SharePoint
   console.log('onAuthSuccess called, user:', msUser ? msUser.username : 'none');
   setupSpList();
@@ -2263,7 +2312,7 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 
 // Init
-loadSavedTotals(); renderEps(); renderCal(); renderTeam(); setDate(); renderTickets(); updateStats();
+loadSavedTotals(); renderEps(); renderCal(); renderTeam(); setDate(); renderTickets(); updateStats(); renderPipeline();
 initAuth();
 </script>
 </div><!-- end app-root -->
