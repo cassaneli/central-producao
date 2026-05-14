@@ -1873,22 +1873,12 @@ async function spPatch(endpoint, body){
 async function getSiteAndListId(){
   if(spSiteId && spListId) return true;
   try {
-    var siteResp = await spGet('/sites/seguradoraalm.sharepoint.com:/sites/MARKETING-TVPSALM:');
-    console.log('Site response:', JSON.stringify(siteResp).substring(0,200));
-    if(siteResp.error){ console.error('Site error:', siteResp.error); return false; }
-    spSiteId = siteResp.id;
-    // Try full compound ID first, then just GUID
-    var listsResp = await spGet('/sites/'+spSiteId+'/lists?$select=id,name,displayName');
-    if(!listsResp.value){
-      var guid = spSiteId.split(',')[1] || spSiteId;
-      spSiteId = guid;
-      listsResp = await spGet('/sites/'+guid+'/lists?$select=id,name,displayName');
-    }
-    console.log('Lists:', listsResp.value ? listsResp.value.map(function(l){return l.name;}).join(', ') : JSON.stringify(listsResp).substring(0,200));
-    var list = listsResp.value && listsResp.value.find(function(l){ return l.name===LIST_NAME||l.displayName===LIST_NAME; });
-    if(list) spListId = list.id;
-    console.log('Final - Site ID:', spSiteId, 'List ID:', spListId);
-    return !!(spSiteId && spListId);
+    // Known Site ID from logs: seguradoraalm.sharepoint.com,7fc73d70-a85d-4f3e-b9ea-fb1e123cd4cd,...
+    // Known List ID from logs: 907ade11-5e63-4c82-82a1-3183477e5a53
+    spSiteId = '7fc73d70-a85d-4f3e-b9ea-fb1e123cd4cd';
+    spListId = '907ade11-5e63-4c82-82a1-3183477e5a53';
+    console.log('Using hardcoded Site ID:', spSiteId, 'List ID:', spListId);
+    return true;
   } catch(e) {
     console.error('getSiteAndListId error:', e);
     return false;
