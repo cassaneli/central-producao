@@ -67,6 +67,7 @@ body::before{content:'';position:fixed;top:0;left:240px;right:0;height:300px;bac
 .div-tgl{background:rgba(255,255,255,.06);border-radius:10px;padding:4px;display:flex;gap:4px}
 .div-btn{flex:1;padding:7px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;border:none;background:none;color:rgba(255,255,255,.45);transition:all .18s;font-family:'IBM Plex Mono',monospace;letter-spacing:.04em}
 .div-btn.on{background:var(--b6);color:#fff}
+.ep-list-card:hover{background:#f4f7ff !important;}
 
 /* LAYOUT */
 .wrap{margin-left:240px;min-height:100vh;display:flex;flex-direction:column}
@@ -743,6 +744,58 @@ main{padding:32px 40px;flex:1}
       <div class="ma">
         <button class="btn-c" onclick="closeCalModal()">Cancelar</button>
         <button class="btn-p" onclick="saveCalEvent()">Salvar evento</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR EPISÓDIO -->
+<div id="edit-ep-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,42,94,.55);backdrop-filter:blur(6px);z-index:99999;overflow-y:auto">
+  <div style="min-height:100%;display:flex;align-items:center;justify-content:center;padding:60px 20px">
+    <div style="background:var(--white);border:1px solid var(--bd);border-radius:18px;padding:32px;width:480px;max-width:100%;box-shadow:var(--shl)">
+      <div class="mt">Editar Episódio</div>
+      <div class="ms">Altere as informações do episódio</div>
+      <input type="hidden" id="edit-ep-idx">
+      <div class="fg">
+        <label class="fl">Programa</label>
+        <input type="text" id="edit-ep-prog" class="fi" readonly style="background:var(--s2);color:var(--mu)">
+      </div>
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Episódio</label>
+          <input type="number" id="edit-ep-num" class="fi" readonly style="background:var(--s2);color:var(--mu)">
+        </div>
+        <div class="fg">
+          <label class="fl">Nome do convidado</label>
+          <input type="text" id="edit-ep-convidado" class="fi" placeholder="Ex: João Silva">
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Responsável</label>
+        <select id="edit-ep-resp" class="fi">
+          <option value="">Selecione...</option>
+          <option>Patrick Cassaneli</option>
+          <option>Ygor Xavier</option>
+          <option>Maria Eduarda Carneiro</option>
+        </select>
+      </div>
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Data de gravação</label>
+          <input type="date" id="edit-ep-data-grav" class="fi">
+        </div>
+        <div class="fg">
+          <label class="fl">Vai ao ar em</label>
+          <input type="date" id="edit-ep-data-ar" class="fi">
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Observações</label>
+        <input type="text" id="edit-ep-obs" class="fi" placeholder="Observações">
+      </div>
+      <div class="ma">
+        <button class="btn-c" onclick="closeEditEp()">Cancelar</button>
+        <button class="btn-p" onclick="saveEditEp()">Salvar alterações</button>
       </div>
     </div>
   </div>
@@ -1674,8 +1727,8 @@ function renderEpsFull(){
       <button class="btn-p" style="padding:8px 18px;font-size:12px" onclick="openNovoPrograma()">＋ Novo programa</button>
     </div>` +
   programas_all.map((p,i) => `
-    <div onclick="openPrograma(${i})" style="background:var(--white);border:1px solid rgba(160,192,240,.5);border-radius:14px;padding:18px 22px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh);transition:all .2s" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 20px rgba(45,91,227,.1)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--sh)'">
-      <div style="display:flex;align-items:center;gap:14px">
+    <div style="background:var(--white);border:1px solid rgba(160,192,240,.5);border-radius:14px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh);transition:all .2s" onmouseover="this.style.boxShadow='0 4px 20px rgba(45,91,227,.1)'" onmouseout="this.style.boxShadow='var(--sh)'">
+      <div onclick="openPrograma(${i})" style="display:flex;align-items:center;gap:14px;flex:1;cursor:pointer">
         <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--tvps-bright),var(--tvps-glow));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎬</div>
         <div>
           <div style="font-size:14px;font-weight:700;color:var(--tvps-deep)">${p.n}</div>
@@ -1686,7 +1739,8 @@ function renderEpsFull(){
       </div>
       <div style="display:flex;align-items:center;gap:10px">
         <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mu)">${p.total} eps</span>
-        <span style="color:var(--mu);font-size:20px">›</span>
+        <span onclick="openPrograma(${i})" style="color:var(--mu);font-size:20px;cursor:pointer">›</span>
+        ${isAdmin?'<button onclick="deletePrograma('+i+')" style="background:var(--rb);border:none;color:var(--rn);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:600">✕</button>':''}
       </div>
     </div>`).join('');
 }
@@ -1721,21 +1775,27 @@ function openPrograma(i){
         const hasAuth = epData.autorizacoes.length > 0;
         const hasFotos = epData.fotos.length > 0;
         const hasLinks = epData.links.length > 0;
-        return `<div onclick="openEpisodio(${i},${epNum})" style="background:var(--white);border:1px solid rgba(160,192,240,.5);border-radius:12px;padding:14px 18px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh);transition:all .15s" onmouseover="this.style.background='#f4f7ff'" onmouseout="this.style.background='var(--white)'">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="width:36px;height:36px;border-radius:8px;background:var(--s2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--tvps-bright);flex-shrink:0">${String(epNum).padStart(2,'0')}</div>
-            <div>
-              <div style="font-size:13px;font-weight:600;color:var(--tvps-deep)">Episódio ${epNum}</div>
-              <div style="display:flex;gap:6px;margin-top:4px">
-                ${hasAuth?'<span style="font-size:9px;padding:2px 6px;border-radius:99px;background:#dcfce7;color:#15803d;font-family:IBM Plex Mono,monospace">📄 Aut.</span>':''}
-                ${hasFotos?'<span style="font-size:9px;padding:2px 6px;border-radius:99px;background:#dbeafe;color:#1d54d4;font-family:IBM Plex Mono,monospace">📸 Fotos</span>':''}
-                ${hasLinks?'<span style="font-size:9px;padding:2px 6px;border-radius:99px;background:#fee2e2;color:#dc2626;font-family:IBM Plex Mono,monospace">▶ YT</span>':''}
-                ${!hasAuth&&!hasFotos&&!hasLinks?'<span style="font-size:9px;color:var(--ml);font-family:IBM Plex Mono,monospace;font-style:italic">sem arquivos</span>':''}
-              </div>
-            </div>
-          </div>
-          <span style="color:var(--mu);font-size:18px">›</span>
-        </div>`;
+        var epDataLocal = getEpData(i, epNum);
+        var epConv = getEpStatus(i, epNum);
+        var convDone = epConv.c==='done', buckDone = epConv.b==='done', metaDone = epConv.m==='done';
+        return '<div class="ep-list-card" style="background:var(--white);border:1px solid rgba(160,192,240,.5);border-radius:12px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh);transition:all .15s">' +
+          '<div onclick="openEpisodio('+i+','+epNum+')" style="display:flex;align-items:center;gap:12px;flex:1;cursor:pointer">' +
+            '<div style="width:36px;height:36px;border-radius:8px;background:var(--s2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--tvps-bright);flex-shrink:0">'+String(epNum).padStart(2,'0')+'</div>' +
+            '<div>' +
+              '<div style="font-size:13px;font-weight:600;color:var(--tvps-deep)">Episódio '+epNum+(epDataLocal.convidado?' — '+epDataLocal.convidado:'')+'</div>' +
+              '<div style="display:flex;gap:4px;margin-top:4px;align-items:center">' +
+                (convDone?'<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:#dcfce7;color:#15803d">✓Conv</span>':'<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:#fef3c7;color:#92400e">Conv</span>') +
+                (buckDone?'<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:#dcfce7;color:#15803d">✓Bucket</span>':'<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:#fef3c7;color:#92400e">Bucket</span>') +
+                (metaDone?'<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:#dcfce7;color:#15803d">✓Meta</span>':'<span style="font-size:9px;padding:1px 6px;border-radius:99px;background:#fef3c7;color:#92400e">Meta</span>') +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:8px">' +
+            '<span onclick="openEpisodio('+i+','+epNum+')" style="color:var(--mu);font-size:18px;cursor:pointer">›</span>' +
+            (isAdmin?'<button onclick="openEditEp('+i+','+epNum+')" style="background:var(--b0);border:1px solid var(--b1);color:var(--b7);border-radius:7px;padding:5px 9px;cursor:pointer;font-size:11px">✏️</button>':'') +
+            (isAdmin?'<button onclick="deleteEpisodio('+i+','+epNum+')" style="background:var(--rb);border:none;color:var(--rn);border-radius:7px;padding:5px 9px;cursor:pointer;font-size:11px">✕</button>':'') +
+          '</div>' +
+        '</div>';
       }).join('')}
     </div>`;
 }
@@ -1916,6 +1976,84 @@ function renderDetData(progIdx, epNum){
 }
 
 // ADD / REMOVE
+function deletePrograma(i){
+  if(!isAdmin){ alert('Apenas o admin pode excluir programas.'); return; }
+  var allProgs = getAllProgramas();
+  var p = allProgs[i];
+  if(!confirm('Excluir o programa "'+p.n+'" e todos os seus episódios? Esta ação não pode ser desfeita.')) return;
+  if(i < programas.length){
+    programas.splice(i,1);
+    localStorage.setItem('ep_totals', JSON.stringify(programas.map(function(p){ return p.total; })));
+    spSaveData('ep_totals', programas.map(function(p){ return p.total; })).catch(function(){});
+  } else {
+    var ci = i - programas.length;
+    customProgramas.splice(ci,1);
+    localStorage.setItem('customProgramas', JSON.stringify(customProgramas));
+    spSaveData('customProgramas', customProgramas).catch(function(){});
+  }
+  syncEpDataToSP();
+  renderEpsFull();
+}
+
+function deleteEpisodio(progIdx, epNum){
+  if(!isAdmin){ alert('Apenas o admin pode excluir episódios.'); return; }
+  if(!confirm('Excluir o Episódio '+epNum+'? Esta ação não pode ser desfeita.')) return;
+  var allProgs = getAllProgramas();
+  var p = allProgs[progIdx];
+  // Remove episode data
+  localStorage.removeItem('ep_'+progIdx+'_'+epNum);
+  localStorage.removeItem('epstatus_'+progIdx+'_'+epNum);
+  // Reduce total
+  if(progIdx < programas.length){
+    programas[progIdx].total = Math.max(0, p.total - 1);
+    localStorage.setItem('ep_totals', JSON.stringify(programas.map(function(p){ return p.total; })));
+  } else {
+    var ci = progIdx - programas.length;
+    customProgramas[ci].total = Math.max(0, p.total - 1);
+    localStorage.setItem('customProgramas', JSON.stringify(customProgramas));
+    spSaveData('customProgramas', customProgramas).catch(function(){});
+  }
+  syncEpDataToSP();
+  openPrograma(progIdx);
+}
+
+function openEditEp(progIdx, epNum){
+  var data = getEpData(progIdx, epNum);
+  var allProgs = getAllProgramas();
+  var p = allProgs[progIdx];
+  document.getElementById('edit-ep-prog').value = p.n;
+  document.getElementById('edit-ep-num').value = epNum;
+  document.getElementById('edit-ep-idx').value = progIdx;
+  document.getElementById('edit-ep-convidado').value = data.convidado || '';
+  document.getElementById('edit-ep-resp').value = data.resp || '';
+  document.getElementById('edit-ep-data-grav').value = data.dataGrav || '';
+  document.getElementById('edit-ep-data-ar').value = data.dataAr || '';
+  document.getElementById('edit-ep-obs').value = data.obs || '';
+  document.getElementById('edit-ep-overlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+function closeEditEp(){
+  document.getElementById('edit-ep-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function saveEditEp(){
+  var progIdx = parseInt(document.getElementById('edit-ep-idx').value);
+  var epNum = parseInt(document.getElementById('edit-ep-num').value);
+  var data = getEpData(progIdx, epNum);
+  data.convidado = document.getElementById('edit-ep-convidado').value.trim();
+  data.resp = document.getElementById('edit-ep-resp').value;
+  data.dataGrav = document.getElementById('edit-ep-data-grav').value;
+  data.dataAr = document.getElementById('edit-ep-data-ar').value;
+  data.obs = document.getElementById('edit-ep-obs').value.trim();
+  saveEpData(progIdx, epNum, data);
+  closeEditEp();
+  openEpisodio(progIdx, epNum);
+}
+document.addEventListener('DOMContentLoaded', function(){
+  var ov = document.getElementById('edit-ep-overlay');
+  if(ov) ov.addEventListener('click', function(e){ if(e.target===this) closeEditEp(); });
+});
+
 function addAutorizacao(pi,en){ const nome=prompt('Nome do convidado:'); if(!nome) return; const tipos={'1':'Imagem e Voz','2':'Somente Imagem','3':'Somente Voz'}; const t=prompt('Tipo:\n1 - Imagem e Voz\n2 - Somente Imagem\n3 - Somente Voz','1'); const obs=prompt('Observação (opcional):',''); const d=getEpData(pi,en); d.autorizacoes.push({nome,tipo:tipos[t]||'Imagem e Voz',obs:obs||'',data:new Date().toLocaleDateString('pt-BR')}); saveEpData(pi,en,d); renderDetData(pi,en); }
 function removeAutorizacao(pi,en,j){ if(!confirm('Remover?')) return; const d=getEpData(pi,en); d.autorizacoes.splice(j,1); saveEpData(pi,en,d); renderDetData(pi,en); }
 function addFoto(pi,en){ const nome=prompt('Descrição da foto:'); if(!nome) return; const link=prompt('Link (OneDrive, Google Drive, etc):'); if(!link) return; const d=getEpData(pi,en); d.fotos.push({nome,link}); saveEpData(pi,en,d); renderDetData(pi,en); }
@@ -2452,8 +2590,8 @@ function startRealtimeSync(){
     } catch(e) {
       console.error('Realtime sync error:', e);
     }
-  }, 30000); // every 30 seconds
-  console.log('Real-time sync started (30s interval)');
+  }, 5000); // every 5 seconds
+  console.log('Real-time sync started (5s interval)');
 }
 
 function showSyncIndicator(){
