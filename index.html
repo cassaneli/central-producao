@@ -296,6 +296,9 @@ main{padding:32px 40px;flex:1}
   <div class="topbar">
     <div><span class="pg-title" id="pg-title-main">Dashboard <span id="dlabel">· TVPS Fast Channel</span></span></div>
     <div class="tb-right">
+      <div id="sync-indicator" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--gn);opacity:0;transition:opacity .5s;display:flex;align-items:center;gap:4px">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--gn)"></div>Sincronizado
+      </div>
       <div class="date-pill" id="cdate"></div>
       <button class="btn-p" onclick="openModal()"><span>＋</span> Novo episódio</button>
     </div>
@@ -2059,7 +2062,7 @@ function onAuthSuccess(){
   loadSavedTotals(); renderEps(); renderCal(); renderTeam(); setDate(); renderTickets(); updateStats(); renderPipeline();
   // Connect to SharePoint
   console.log('onAuthSuccess called, user:', msUser ? msUser.username : 'none');
-  setupSpList();
+  setupSpList().then(function(){ startRealtimeSync(); });
 }
 
 function showLoginScreen(){
@@ -2231,7 +2234,7 @@ async function setupSpList(){
   try {
     const ok = await getSiteAndListId();
     console.log('getSiteAndListId result:', ok, 'siteId:', spSiteId, 'listId:', spListId);
-    if(!ok){ console.log('List not found, trying to create columns...'); return; }
+    if(!ok){ console.log('List not found'); return; }
     console.log('Connected to SharePoint! Loading data...');
     await spLoadAll();
   } catch(e) {
@@ -2355,6 +2358,110 @@ document.addEventListener('DOMContentLoaded', function(){
 // Init
 loadSavedTotals(); renderEps(); renderCal(); renderTeam(); setDate(); renderTickets(); updateStats(); renderPipeline();
 initAuth();
+
+// ─── REAL-TIME SYNC (poll every 30s) ───
+var syncInterval = null;
+function startRealtimeSync(){
+  if(syncInterval) clearInterval(syncInterval);
+  syncInterval = setInterval(async function(){
+    if(!msToken || !spSiteId || !spListId) return;
+    try {
+      spItemsCache = null; // invalidate cache
+      var items = await spGetAllItems();
+      
+      function getVal(key){
+        var item = items.find(function(i){ return i.fields && i.fields.Title === key; });
+        if(item && item.fields.Valor){ try{ return JSON.parse(item.fields.Valor); }catch(e){ return null; } }
+        return null;
+      }
+
+      var changed = false;
+
+      // Sync ep_totals
+      var spTotals = getVal('ep_totals');
+      if(spTotals){
+        var localTotals = programas.map(function(p){ return p.total; });
+        var diff = spTotals.some(function(t,i){ return t !== localTotals[i]; });
+        if(diff){
+          spTotals.forEach(function(t,i){ if(programas[i]) programas[i].total = t; });
+          localStorage.setItem('ep_totals', JSON.stringify(spTotals));
+          changed = true;
+          console.log('Sync: ep_totals updated');
+        }
+      }
+
+      // Sync customProgramas
+      var spCustom = getVal('customProgramas');
+      if(spCustom && JSON.stringify(spCustom) !== JSON.stringify(customProgramas)){
+        customProgramas = spCustom;
+        localStorage.setItem('customProgramas', JSON.stringify(customProgramas));
+        changed = true;
+        console.log('Sync: customProgramas updated');
+      }
+
+      // Sync ep data
+      var spEpData = getVal('all_ep_data');
+      if(spEpData){
+        Object.keys(spEpData).forEach(function(k){
+          var local = localStorage.getItem(k);
+          var remote = JSON.stringify(spEpData[k]);
+          if(local !== remote){
+            localStorage.setItem(k, remote);
+            changed = true;
+          }
+        });
+        if(changed) console.log('Sync: ep_data updated');
+      }
+
+      // Sync ep status
+      var spEpStatus = getVal('all_ep_status');
+      if(spEpStatus){
+        Object.keys(spEpStatus).forEach(function(k){
+          var local = localStorage.getItem(k);
+          var remote = JSON.stringify(spEpStatus[k]);
+          if(local !== remote){
+            localStorage.setItem(k, remote);
+            changed = true;
+          }
+        });
+      }
+
+      // Sync tickets
+      var spTickets = getVal('tickets');
+      if(spTickets && JSON.stringify(spTickets) !== JSON.stringify(tickets)){
+        tickets = spTickets;
+        localStorage.setItem('tickets', JSON.stringify(tickets));
+        changed = true;
+        console.log('Sync: tickets updated');
+      }
+
+      // Sync calEvents
+      var spCalEvents = getVal('calEvents');
+      if(spCalEvents && JSON.stringify(spCalEvents) !== JSON.stringify(calEvents)){
+        calEvents = spCalEvents;
+        localStorage.setItem('calEvents', JSON.stringify(calEvents));
+        changed = true;
+        console.log('Sync: calEvents updated');
+      }
+
+      if(changed){
+        renderEps(); renderCal(); renderTeam(); renderTickets(); updateStats(); renderPipeline();
+        // Show subtle sync indicator
+        showSyncIndicator();
+      }
+    } catch(e) {
+      console.error('Realtime sync error:', e);
+    }
+  }, 30000); // every 30 seconds
+  console.log('Real-time sync started (30s interval)');
+}
+
+function showSyncIndicator(){
+  var el = document.getElementById('sync-indicator');
+  if(!el) return;
+  el.style.opacity = '1';
+  setTimeout(function(){ el.style.opacity = '0'; }, 2000);
+}
 </script>
 </div><!-- end app-root -->
 </body>
