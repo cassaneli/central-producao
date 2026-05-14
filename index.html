@@ -1387,7 +1387,7 @@ function updateStats(){
 }
 
 function getEpStatus(pi,ep){ return JSON.parse(localStorage.getItem('epstatus_'+pi+'_'+ep)||'{"c":"pend","b":"pend","m":"pend"}'); }
-function saveEpStatus(pi,ep,data){ localStorage.setItem('epstatus_'+pi+'_'+ep,JSON.stringify(data)); updateStats(); renderPipeline(); }
+function saveEpStatus(pi,ep,data){ localStorage.setItem('epstatus_'+pi+'_'+ep,JSON.stringify(data)); updateStats(); renderPipeline(); syncEpDataToSP(); }
 
 // ─── ADMIN SYSTEM ───
 // IMPORTANT: When Azure AD is integrated, replace password check with:
@@ -1481,17 +1481,17 @@ function addNovoEpisodio(progIdx){
   const allProgs = getAllProgramas();
   const p = allProgs[progIdx];
   const novoNum = p.total + 1;
-  // update total
   if(progIdx < programas.length){
     programas[progIdx].total = novoNum;
   } else {
     const customIdx = progIdx - programas.length;
     customProgramas[customIdx].total = novoNum;
     localStorage.setItem('customProgramas', JSON.stringify(customProgramas));
+    spSaveData('customProgramas', customProgramas).catch(function(){});
   }
-  // save episode totals for built-in programs
-  localStorage.setItem('ep_totals', JSON.stringify(programas.map(p=>p.total)));
-  // navigate directly to new episode
+  localStorage.setItem('ep_totals', JSON.stringify(programas.map(function(p){ return p.total; })));
+  spSaveData('ep_totals', programas.map(function(p){ return p.total; })).catch(function(){});
+  renderPipeline();
   openEpisodio(progIdx, novoNum);
 }
 
@@ -1627,7 +1627,32 @@ function navTo(sec){
 
 // ─── EP DATA STORAGE ───
 function getEpData(progIdx, epNum){ return JSON.parse(localStorage.getItem('ep_'+progIdx+'_'+epNum)||'{"autorizacoes":[],"fotos":[],"links":[]}'); }
-function saveEpData(progIdx, epNum, data){ localStorage.setItem('ep_'+progIdx+'_'+epNum, JSON.stringify(data)); }
+function saveEpData(progIdx, epNum, data){
+  localStorage.setItem('ep_'+progIdx+'_'+epNum, JSON.stringify(data));
+  syncEpDataToSP();
+}
+
+function syncEpDataToSP(){
+  // Collect all ep data into one object
+  var allEpData = {};
+  var allEpStatus = {};
+  var allProgs = getAllProgramas();
+  allProgs.forEach(function(p, pi){
+    for(var en=1; en<=p.total; en++){
+      var key = 'ep_'+pi+'_'+en;
+      var val = localStorage.getItem(key);
+      if(val) allEpData[key] = JSON.parse(val);
+      var skey = 'epstatus_'+pi+'_'+en;
+      var sval = localStorage.getItem(skey);
+      if(sval) allEpStatus[skey] = JSON.parse(sval);
+    }
+  });
+  spSaveData('all_ep_data', allEpData).catch(function(){});
+  spSaveData('all_ep_status', allEpStatus).catch(function(){});
+  // Also save totals
+  spSaveData('ep_totals', programas.map(function(p){ return p.total; })).catch(function(){});
+  spSaveData('customProgramas', customProgramas).catch(function(){});
+}
 
 // ─── STATE ───
 let currentProg = null;
@@ -2165,7 +2190,23 @@ async function spLoadAll(){
     var spTotals = getVal('ep_totals');
     if(spTotals){ spTotals.forEach(function(t,i){ if(programas[i]) programas[i].total = t; }); localStorage.setItem('ep_totals', JSON.stringify(spTotals)); }
 
-    renderEps(); renderCal(); renderTeam(); renderTickets(); updateStats();
+    // Load all episode data
+    var spEpData = getVal('all_ep_data');
+    if(spEpData){
+      Object.keys(spEpData).forEach(function(k){
+        localStorage.setItem(k, JSON.stringify(spEpData[k]));
+      });
+    }
+
+    // Load all episode statuses
+    var spEpStatus = getVal('all_ep_status');
+    if(spEpStatus){
+      Object.keys(spEpStatus).forEach(function(k){
+        localStorage.setItem(k, JSON.stringify(spEpStatus[k]));
+      });
+    }
+
+    renderEps(); renderCal(); renderTeam(); renderTickets(); updateStats(); renderPipeline();
     console.log('SharePoint data loaded successfully!');
   } catch(e) {
     console.error('spLoadAll error:', e);
