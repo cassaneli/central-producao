@@ -790,6 +790,11 @@ main{padding:32px 40px;flex:1}
         </div>
       </div>
       <div class="fg">
+        <label class="fl">Cue Points — Intervalos Comerciais</label>
+        <input type="text" id="edit-ep-cuepoints" class="fi" placeholder="Ex: 12:02:36; 25:01:00; 31:00:02">
+        <div style="font-size:10px;color:var(--ml);font-family:'IBM Plex Mono',monospace;margin-top:4px">Separe os tempos com ponto e vírgula (;)</div>
+      </div>
+      <div class="fg">
         <label class="fl">Observações</label>
         <input type="text" id="edit-ep-obs" class="fi" placeholder="Observações">
       </div>
@@ -888,6 +893,11 @@ main{padding:32px 40px;flex:1}
         </div>
       </div>
       <div class="fg">
+        <label class="fl">Cue Points — Intervalos Comerciais</label>
+        <input type="text" id="ep-cuepoints-input" class="fi" placeholder="Ex: 12:02:36; 25:01:00; 31:00:02">
+        <div style="font-size:10px;color:var(--ml);font-family:'IBM Plex Mono',monospace;margin-top:4px">Separe os tempos com ponto e vírgula (;)</div>
+      </div>
+      <div class="fg">
         <label class="fl">Observações</label>
         <input type="text" id="ep-obs-input" class="fi" placeholder="Ex: Entrevistado confirmado, aguardar liberação">
       </div>
@@ -905,21 +915,21 @@ main{padding:32px 40px;flex:1}
 
 <script>
 const programas=[
-  {n:'A Frequência do Som',   total:2,  r:'Patrick C.',a:'av1',c:'done',b:'done',m:'done'},
-  {n:'Amor Sem Filtros',      total:13, r:'Patrick C.',a:'av1',c:'done',b:'done',m:'done'},
-  {n:'Bastidores do Seguro',  total:4,  r:'Ygor X.',   a:'av2',c:'done',b:'done',m:'done'},
-  {n:'Café com Ouro',         total:14, r:'Ygor X.',   a:'av2',c:'done',b:'done',m:'done'},
-  {n:'Cartada Final',         total:1,  r:'Maria E.',  a:'av3',c:'done',b:'done',m:'done'},
-  {n:'Direito Fácil',         total:18, r:'Patrick C.',a:'av1',c:'done',b:'done',m:'done'},
-  {n:'Esporte em Cena',       total:6,  r:'Maria E.',  a:'av3',c:'done',b:'done',m:'done'},
-  {n:'Fala que eu Treino',    total:13, r:'Ygor X.',   a:'av2',c:'done',b:'done',m:'done'},
-  {n:"Guerra das UGC's",      total:4,  r:'Maria E.',  a:'av3',c:'done',b:'done',m:'done'},
-  {n:'Histórias de Valor',    total:5,  r:'Patrick C.',a:'av1',c:'done',b:'done',m:'done'},
-  {n:'Muito Além da Moda',    total:12, r:'Ygor X.',   a:'av2',c:'done',b:'done',m:'done'},
-  {n:'Multiplica Comigo',     total:9,  r:'Maria E.',  a:'av3',c:'done',b:'done',m:'done'},
-  {n:'Na Veia Esportiva',     total:16, r:'Patrick C.',a:'av1',c:'done',b:'done',m:'done'},
-  {n:'Pod Despertar',         total:4,  r:'Ygor X.',   a:'av2',c:'done',b:'done',m:'done'},
-  {n:'Xperiência',            total:19, r:'Maria E.',  a:'av3',c:'done',b:'done',m:'done'},
+  {n:'A Frequência do Som',   total:2,  r:'',a:'av1',c:'done',b:'done',m:'done'},
+  {n:'Amor Sem Filtros',      total:13, r:'',a:'av1',c:'done',b:'done',m:'done'},
+  {n:'Bastidores do Seguro',  total:4,  r:'',a:'av2',c:'done',b:'done',m:'done'},
+  {n:'Café com Ouro',         total:14, r:'',a:'av2',c:'done',b:'done',m:'done'},
+  {n:'Cartada Final',         total:1,  r:'',a:'av3',c:'done',b:'done',m:'done'},
+  {n:'Direito Fácil',         total:18, r:'',a:'av1',c:'done',b:'done',m:'done'},
+  {n:'Esporte em Cena',       total:6,  r:'',a:'av3',c:'done',b:'done',m:'done'},
+  {n:'Fala que eu Treino',    total:13, r:'',a:'av2',c:'done',b:'done',m:'done'},
+  {n:"Guerra das UGC's",      total:4,  r:'',a:'av3',c:'done',b:'done',m:'done'},
+  {n:'Histórias de Valor',    total:5,  r:'',a:'av1',c:'done',b:'done',m:'done'},
+  {n:'Muito Além da Moda',    total:12, r:'',a:'av2',c:'done',b:'done',m:'done'},
+  {n:'Multiplica Comigo',     total:9,  r:'',a:'av3',c:'done',b:'done',m:'done'},
+  {n:'Na Veia Esportiva',     total:16, r:'',a:'av1',c:'done',b:'done',m:'done'},
+  {n:'Pod Despertar',         total:4,  r:'',a:'av2',c:'done',b:'done',m:'done'},
+  {n:'Xperiência',            total:19, r:'',a:'av3',c:'done',b:'done',m:'done'},
 ];
 // keep eps as alias for dashboard compatibility
 const eps=programas.map(p=>({n:p.n,e:p.total+' no ar',r:p.r,a:p.a,c:p.c,b:p.b,m:p.m,d:'—',g:'—'}));
@@ -1114,6 +1124,7 @@ async function saveEp(){
   epData.dataGrav = dataGrav;
   epData.dataAr = dataAr;
   epData.obs = obs;
+  epData.cuePoints = document.getElementById('ep-cuepoints-input').value.trim();
   epData.autorizacoes = epData.autorizacoes || [];
   epData.fotos = epData.fotos || [];
   epData.links = epData.links || [];
@@ -1826,6 +1837,14 @@ function openEpisodio(progIdx, epNum){
       </div>
       <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:700;opacity:.2">${String(epNum).padStart(2,'0')}</div>
     </div>
+    <!-- CUE POINTS -->
+    <div id="ep-cuepoints-display-${progIdx}-${epNum}" style="background:var(--white);border:1px solid rgba(160,192,240,.5);border-radius:14px;padding:16px 22px;margin-bottom:16px;box-shadow:var(--sh)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--mu)">🎬 Cue Points — Intervalos Comerciais</div>
+        ${isAdmin?'<button onclick="openEditEp('+progIdx+','+epNum+')" style="font-size:11px;color:var(--tvps-glow);background:none;border:none;cursor:pointer;font-family:Inter,sans-serif">✏️ Editar</button>':''}
+      </div>
+      <div id="cuepoints-val-${progIdx}-${epNum}" style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--tvps-deep)"></div>
+    </div>
     <!-- STATUS TOGGLES -->
     <div style="background:var(--white);border:1px solid rgba(160,192,240,.5);border-radius:14px;padding:18px 22px;margin-bottom:16px;box-shadow:var(--sh)">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--mu);margin-bottom:14px">Status do episódio</div>
@@ -1849,6 +1868,19 @@ function openEpisodio(progIdx, epNum){
 
   renderDetData(progIdx, epNum);
   renderDetStatus(progIdx, epNum);
+  // Render cue points
+  var epD = getEpData(progIdx, epNum);
+  var cpEl = document.getElementById('cuepoints-val-'+progIdx+'-'+epNum);
+  if(cpEl){
+    if(epD.cuePoints && epD.cuePoints.trim()){
+      var cps = epD.cuePoints.split(';').map(function(c){ return c.trim(); }).filter(Boolean);
+      cpEl.innerHTML = cps.map(function(cp,i){
+        return '<span style="display:inline-block;background:var(--b0);border:1px solid var(--b1);border-radius:6px;padding:3px 10px;margin:2px;color:var(--tvps-bright)">Break '+(i+1)+': '+cp+'</span>';
+      }).join('');
+    } else {
+      cpEl.innerHTML = '<span style="color:var(--ml);font-style:italic;font-size:12px">Nenhum cue point cadastrado</span>';
+    }
+  }
 }
 
 function switchDetTab(progIdx, epNum, tab){
@@ -2029,6 +2061,7 @@ function openEditEp(progIdx, epNum){
   document.getElementById('edit-ep-data-grav').value = data.dataGrav || '';
   document.getElementById('edit-ep-data-ar').value = data.dataAr || '';
   document.getElementById('edit-ep-obs').value = data.obs || '';
+  document.getElementById('edit-ep-cuepoints').value = data.cuePoints || '';
   document.getElementById('edit-ep-overlay').style.display = 'block';
   document.body.style.overflow = 'hidden';
 }
@@ -2045,6 +2078,7 @@ function saveEditEp(){
   data.dataGrav = document.getElementById('edit-ep-data-grav').value;
   data.dataAr = document.getElementById('edit-ep-data-ar').value;
   data.obs = document.getElementById('edit-ep-obs').value.trim();
+  data.cuePoints = document.getElementById('edit-ep-cuepoints').value.trim();
   saveEpData(progIdx, epNum, data);
   closeEditEp();
   openEpisodio(progIdx, epNum);
