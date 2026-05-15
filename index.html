@@ -2129,7 +2129,8 @@ function renderDetData(progIdx, epNum){
     var epDataVid = getEpData(progIdx, epNum);
     var cleanProgVid = allProgs[progIdx].n.replace(/[#%*:<>?\/\\|]/g,'');
     var cleanEpVid = ('Ep'+String(epNum).padStart(2,'0')+(epDataVid.convidado?'_'+epDataVid.convidado:'')).replace(/[#%*:<>?\/\\|]/g,'_');
-    var spFolderUrlVid = 'https://seguradoraalm.sharepoint.com/sites/MARKETING-TVPSALM/_layouts/15/onedrive.aspx?id=%2Fsites%2FMARKETING-TVPSALM%2FDocumentos%20Partilhados%2FMateriais%20TVPS%2F'+encodeURIComponent(cleanProgVid)+'%2F'+encodeURIComponent(cleanEpVid)+'%2FVideo%20Editado&view=0';
+    var spBaseVid = '/sites/MARKETING-TVPSALM/Documentos Compartilhados/Materiais TVPS/'+cleanProgVid+'/'+cleanEpVid+'/Video Editado';
+    var spFolderUrlVid = 'https://seguradoraalm.sharepoint.com/sites/MARKETING-TVPSALM/_layouts/15/onedrive.aspx?id='+encodeURIComponent(spBaseVid)+'&view=0';
     var vidBtns = '<div style="margin-bottom:16px">' +
       '<div style="background:linear-gradient(135deg,#eef2ff,#e4ecff);border:1px solid rgba(77,127,255,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px">' +
         '<div style="font-size:12px;font-weight:600;color:var(--tvps-bright);margin-bottom:4px">📁 Pasta no SharePoint</div>' +
@@ -2151,7 +2152,8 @@ function renderDetData(progIdx, epNum){
     var epDataBrut = getEpData(progIdx, epNum);
     var cleanProgBrut = allProgs[progIdx].n.replace(/[#%*:<>?\/\\|]/g,'');
     var cleanEpBrut = ('Ep'+String(epNum).padStart(2,'0')+(epDataBrut.convidado?'_'+epDataBrut.convidado:'')).replace(/[#%*:<>?\/\\|]/g,'_');
-    var spFolderUrlBrut = 'https://seguradoraalm.sharepoint.com/sites/MARKETING-TVPSALM/_layouts/15/onedrive.aspx?id=%2Fsites%2FMARKETING-TVPSALM%2FDocumentos%20Partilhados%2FMateriais%20TVPS%2F'+encodeURIComponent(cleanProgBrut)+'%2F'+encodeURIComponent(cleanEpBrut)+'%2FArquivos%20Brutos&view=0';
+    var spBaseBrut = '/sites/MARKETING-TVPSALM/Documentos Compartilhados/Materiais TVPS/'+cleanProgBrut+'/'+cleanEpBrut+'/Arquivos Brutos';
+    var spFolderUrlBrut = 'https://seguradoraalm.sharepoint.com/sites/MARKETING-TVPSALM/_layouts/15/onedrive.aspx?id='+encodeURIComponent(spBaseBrut)+'&view=0';
     var brutBtns = '<div style="margin-bottom:16px">' +
       '<div style="background:linear-gradient(135deg,#eef2ff,#e4ecff);border:1px solid rgba(77,127,255,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px">' +
         '<div style="font-size:12px;font-weight:600;color:var(--tvps-bright);margin-bottom:4px">📁 Pasta no SharePoint</div>' +
@@ -2315,7 +2317,7 @@ async function criarPastasEpisodio(progIdx, epNum, btn){
     banner.style.border = '1px solid #86efac';
     banner.innerHTML = '<div><div style="font-size:12px;font-weight:700;color:#15803d;margin-bottom:2px">✅ Pastas criadas no SharePoint!</div>' +
       '<div style="font-size:11px;color:#166534">Materiais TVPS / '+prog.n+' / Ep'+String(epNum).padStart(2,'0')+(convidado?'_'+convidado:'')+'</div></div>' +
-      '<button onclick="renderDetData('+progIdx+','+epNum+')" style="background:var(--tvps-glow);border:none;color:white;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer">Abrir arquivos</button>';
+      '<a href="https://seguradoraalm.sharepoint.com/sites/MARKETING-TVPSALM/Documentos%20Compartilhados/Forms/AllItems.aspx?id=%2Fsites%2FMARKETING-TVPSALM%2FDocumentos%20Compartilhados%2FMateriais%20TVPS%2F'+encodeURIComponent(prog.n)+'%2F'+encodeURIComponent('Ep'+String(epNum).padStart(2,'0')+(convidado?'_'+convidado:''))+'&viewid=00000000-0000-0000-0000-000000000000" target="_blank" style="background:var(--tvps-glow);border:none;color:white;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block">📂 Ver no SharePoint</a>';
   }
 }
 
