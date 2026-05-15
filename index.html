@@ -1046,18 +1046,96 @@ function saveCalEvent(){
   document.getElementById('cal-ev-obs').value='';
 }
 
-const team=[
-  {name:'Patrick Cassaneli',    role:'Coord. de Marketing', av:'av1',init:'PC',eps:5},
-  {name:'Ygor Xavier',          role:'Estagiário',          av:'av2',init:'YX',eps:5},
-  {name:'Maria Eduarda Carneiro',role:'Estagiária',          av:'av3',init:'ME',eps:5},
-];
+// Team is built dynamically from SP sync data
+const TEAM_INFO = {
+  'patrick.cassaneli@almseguradora.com.br': {name:'Patrick Cassaneli', role:'Coord. de Marketing', init:'PC', av:'av1'},
+  'ygor.xavier@almseguradora.com.br':       {name:'Ygor Xavier',       role:'Estagiário',          init:'YX', av:'av2'},
+  'maria.carneiro@almseguradora.com.br':    {name:'Maria Eduarda Carneiro', role:'Estagiária',     init:'ME', av:'av3'},
+};
+
+function countEpsByResp(respName){
+  var count = 0;
+  var allProgs = getAllProgramas();
+  allProgs.forEach(function(p, pi){
+    for(var en=1; en<=p.total; en++){
+      var data = getEpData(pi, en);
+      if(data.resp && data.resp.indexOf(respName.split(' ')[0]) > -1) count++;
+    }
+  });
+  return count;
+}
+
 function renderTeam(){
-  document.getElementById('team-list').innerHTML=team.map((t,i)=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;${i<team.length-1?'border-bottom:1px solid var(--bd)':''}">
-      <div class="av ${t.av}" style="width:32px;height:32px;font-size:12px">${t.init}</div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--b9)">${t.name}</div><div style="font-size:11px;color:var(--mu)">${t.role}</div></div>
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mu)">${t.eps} ep.</div>
-    </div>`).join('');
+  var el = document.getElementById('team-list');
+  if(!el) return;
+  
+  // Build active team from who has episodes assigned
+  var allProgs = getAllProgramas();
+  var respCounts = {};
+  allProgs.forEach(function(p, pi){
+    for(var en=1; en<=p.total; en++){
+      var data = getEpData(pi, en);
+      if(data.resp && data.resp.trim()){
+        respCounts[data.resp] = (respCounts[data.resp] || 0) + 1;
+      }
+    }
+  });
+
+  // Always show logged in user first
+  var members = [];
+  if(msUser){
+    var email = (msUser.username || '').toLowerCase();
+    var name = msUser.name || email;
+    var initials = name.split(' ').map(function(x){ return x[0]; }).join('').substring(0,2).toUpperCase();
+    var eps = countEpsByResp(name);
+    members.push({
+      name: name,
+      role: email === 'patrick.cassaneli@almseguradora.com.br' ? 'Coord. de Marketing' : 'Equipe',
+      init: initials,
+      av: 'av1',
+      eps: eps,
+      photo: window.myPhotoUrl || null,
+      isMe: true
+    });
+  }
+
+  // Add others from SP sync (who have episodes assigned)
+  Object.keys(respCounts).forEach(function(resp){
+    if(msUser && resp.indexOf(msUser.name ? msUser.name.split(' ')[0] : 'XXXX') > -1) return;
+    var initials = resp.split(' ').map(function(x){ return x[0]; }).join('').substring(0,2).toUpperCase();
+    members.push({
+      name: resp,
+      role: 'Equipe',
+      init: initials,
+      av: 'av2',
+      eps: respCounts[resp],
+      photo: null,
+      isMe: false
+    });
+  });
+
+  if(members.length === 0){
+    el.innerHTML = '<div style="font-size:12px;color:var(--mu);font-style:italic;text-align:center;padding:16px">Nenhum episódio atribuído ainda</div>';
+    // update badge
+    var badge = document.querySelector('.badge.bg');
+    if(badge) badge.textContent = '0 membros';
+    return;
+  }
+
+  // Update badge
+  var badge = document.querySelector('.badge.bg');
+  if(badge) badge.textContent = members.length + ' membro' + (members.length>1?'s':'');
+
+  el.innerHTML = members.map(function(t, i){
+    var avatarHtml = t.photo
+      ? '<div style="width:32px;height:32px;border-radius:50%;background-image:url('+t.photo+');background-size:cover;background-position:center;border:2px solid rgba(255,255,255,.3);flex-shrink:0"></div>'
+      : '<div class="av '+t.av+'" style="width:32px;height:32px;font-size:12px;flex-shrink:0">'+t.init+'</div>';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;'+(i<members.length-1?'border-bottom:1px solid var(--bd)':'')+'">' +
+      avatarHtml +
+      '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--b9)">'+t.name+'</div><div style="font-size:11px;color:var(--mu)">'+t.role+'</div></div>' +
+      '<div style="font-size:11px;color:var(--mu)">'+t.eps+' ep.</div>' +
+    '</div>';
+  }).join('');
 }
 
 function setDate(){
@@ -2131,13 +2209,12 @@ function deleteEventFull(idx){
 }
 
 function renderTeamUpload(){
-  const el=document.getElementById('team-list-upload');
+  var el = document.getElementById('team-list-upload');
   if(!el) return;
-  el.innerHTML=team.map((t,i)=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;${i<team.length-1?'border-bottom:1px solid var(--bd)':''}">
-      <div class="av ${t.av}" style="width:32px;height:32px;font-size:12px">${t.init}</div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--b9)">${t.name}</div><div style="font-size:11px;color:var(--mu)">${t.role}</div></div>
-    </div>`).join('');
+  // Reuse renderTeam logic
+  renderTeam();
+  var mainList = document.getElementById('team-list');
+  if(mainList) el.innerHTML = mainList.innerHTML;
 }
 
 // ─── MICROSOFT AUTH (MSAL) ───
@@ -2221,6 +2298,8 @@ function onAuthSuccess(){
   document.getElementById('ms-user-name').textContent  = name;
   document.getElementById('ms-user-email').textContent = email;
   document.getElementById('ms-user-avatar').textContent = name.split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
+  // Fetch profile photo
+  fetchProfilePhoto();
 
   // auto admin if patrick
   if(email.toLowerCase() === ADMIN_EMAIL_MS.toLowerCase()){
@@ -2270,6 +2349,32 @@ async function spPatch(endpoint, body){
     body: JSON.stringify(body)
   });
   return res.json();
+}
+
+// ─── PROFILE PHOTO ───
+async function fetchProfilePhoto(){
+  try {
+    const res = await fetch('https://graph.microsoft.com/v1.0/me/photos/96x96/$value', {
+      headers: { 'Authorization': 'Bearer ' + msToken }
+    });
+    if(res.ok){
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const avatarEl = document.getElementById('ms-user-avatar');
+      if(avatarEl){
+        avatarEl.style.backgroundImage = 'url(' + url + ')';
+        avatarEl.style.backgroundSize = 'cover';
+        avatarEl.style.backgroundPosition = 'center';
+        avatarEl.style.border = '2px solid rgba(255,255,255,.3)';
+        avatarEl.textContent = '';
+      }
+      // Store photo URL for team list
+      window.myPhotoUrl = url;
+      renderTeam();
+    }
+  } catch(e) {
+    console.log('No profile photo available');
+  }
 }
 
 // ─── SHAREPOINT SYNC ───
