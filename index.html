@@ -2015,6 +2015,16 @@ function openEpisodio(progIdx, epNum){
       </div>
       <div id="cuepoints-val-${progIdx}-${epNum}" style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--tvps-deep)"></div>
     </div>
+    <!-- CRIAR PASTAS SP -->
+    <div id="sp-folders-banner-${progIdx}-${epNum}" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:2px">📁 Pastas no SharePoint</div>
+        <div style="font-size:11px;color:#78350f">Crie as pastas para organizar os arquivos deste episódio</div>
+      </div>
+      <button id="sp-create-btn-${progIdx}-${epNum}" onclick="criarPastasEpisodio(${progIdx},${epNum},this)" style="background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:white;border-radius:8px;padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">
+        📁 Criar pastas
+      </button>
+    </div>
     <!-- STATUS TOGGLES -->
     <div style="background:var(--white);border:1px solid rgba(160,192,240,.5);border-radius:14px;padding:18px 22px;margin-bottom:16px;box-shadow:var(--sh)">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--mu);margin-bottom:14px">Status do episódio</div>
@@ -2289,6 +2299,26 @@ function addAutorizacao(pi,en){ const nome=prompt('Nome do convidado:'); if(!nom
 function removeAutorizacao(pi,en,j){ if(!confirm('Remover?')) return; const d=getEpData(pi,en); d.autorizacoes.splice(j,1); saveEpData(pi,en,d); renderDetData(pi,en); }
 function addFoto(pi,en){ const nome=prompt('Descrição da foto:'); if(!nome) return; const link=prompt('Link (OneDrive, Google Drive, etc):'); if(!link) return; const d=getEpData(pi,en); d.fotos.push({nome,link}); saveEpData(pi,en,d); renderDetData(pi,en); }
 function removeFoto(pi,en,j){ if(!confirm('Remover?')) return; const d=getEpData(pi,en); d.fotos.splice(j,1); saveEpData(pi,en,d); renderDetData(pi,en); }
+async function criarPastasEpisodio(progIdx, epNum, btn){
+  var allProgs = getAllProgramas();
+  var prog = allProgs[progIdx];
+  var epData = getEpData(progIdx, epNum);
+  var convidado = epData.convidado || '';
+  if(!msToken){ alert('Você precisa estar logado!'); return; }
+  btn.disabled = true;
+  btn.textContent = 'Criando...';
+  await createSpFolders(prog.n, epNum, convidado);
+  // Update banner to success
+  var banner = document.getElementById('sp-folders-banner-'+progIdx+'-'+epNum);
+  if(banner){
+    banner.style.background = 'linear-gradient(135deg,#f0fdf4,#dcfce7)';
+    banner.style.border = '1px solid #86efac';
+    banner.innerHTML = '<div><div style="font-size:12px;font-weight:700;color:#15803d;margin-bottom:2px">✅ Pastas criadas no SharePoint!</div>' +
+      '<div style="font-size:11px;color:#166534">Materiais TVPS / '+prog.n+' / Ep'+String(epNum).padStart(2,'0')+(convidado?'_'+convidado:'')+'</div></div>' +
+      '<button onclick="renderDetData('+progIdx+','+epNum+')" style="background:var(--tvps-glow);border:none;color:white;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer">Abrir arquivos</button>';
+  }
+}
+
 function openUploadFoto(pi,en){ openUploadModal(pi,en); setTimeout(function(){ document.getElementById('up-type').value='foto'; updateUploadPathPreview(); },50); }
 function openUploadVid(pi,en){ openUploadModal(pi,en); setTimeout(function(){ document.getElementById('up-type').value='video_editado'; updateUploadPathPreview(); },50); }
 function openUploadBruto(pi,en){ openUploadModal(pi,en); setTimeout(function(){ document.getElementById('up-type').value='bruto'; updateUploadPathPreview(); },50); }
