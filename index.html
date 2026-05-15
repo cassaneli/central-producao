@@ -2096,6 +2096,7 @@ function toggleEpStatus(pi, en, key){
 
 function renderDetData(progIdx, epNum){
   const data = getEpData(progIdx, epNum);
+  const allProgs = getAllProgramas();
   if(!data.videoEditado) data.videoEditado = [];
   if(!data.brutos) data.brutos = [];
 
