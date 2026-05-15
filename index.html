@@ -831,8 +831,7 @@ main{padding:32px 40px;flex:1}
           <label class="fl">Tipo de arquivo</label>
           <select id="up-type" class="fi" onchange="updateUploadPathPreview()">
             <option value="foto">📸 Fotos</option>
-            <option value="video_editado">🎬 Vídeo Editado</option>
-            <option value="bruto">📦 Arquivos Brutos</option>
+            <option value="autorizacao">📄 Autorização de Imagem</option>
           </select>
         </div>
       </div>
@@ -842,7 +841,7 @@ main{padding:32px 40px;flex:1}
       </div>
       <div class="fg">
         <label class="fl">Selecionar arquivos</label>
-        <input type="file" id="up-file" class="fi" multiple style="padding:7px 10px;font-size:12px">
+        <input type="file" id="up-file" class="fi" multiple accept="image/*,.pdf" style="padding:7px 10px;font-size:12px">
         <div style="font-size:10px;color:var(--ml);font-family:'IBM Plex Mono',monospace;margin-top:4px">
           A pasta será criada automaticamente: <span style="color:var(--tvps-glow)" id="up-path-preview">Materiais TVPS / Programa / Tipo / EpXX_Convidado</span>
         </div>
@@ -2116,9 +2115,19 @@ function renderDetData(progIdx, epNum){
   // VÍDEO EDITADO
   const vidEl = document.getElementById('det-content-video');
   if(vidEl){
-    var vidBtns = '<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px">' +
-      '<button class="btn-p" style="padding:7px 16px;font-size:12px;background:linear-gradient(135deg,#16a34a,#15803d)" onclick="openUploadVid('+progIdx+','+epNum+')">⬆ Upload</button>' +
-      '<button class="btn-p" style="padding:7px 16px;font-size:12px" onclick="addVideoEditado('+progIdx+','+epNum+')">＋ Link</button></div>';
+    var epDataVid = getEpData(progIdx, epNum);
+    var cleanProgVid = allProgs[progIdx].n.replace(/[#%*:<>?\/\\|]/g,'');
+    var cleanEpVid = ('Ep'+String(epNum).padStart(2,'0')+(epDataVid.convidado?'_'+epDataVid.convidado:'')).replace(/[#%*:<>?\/\\|]/g,'_');
+    var spFolderUrlVid = 'https://seguradoraalm.sharepoint.com/sites/MARKETING-TVPSALM/_layouts/15/onedrive.aspx?id=%2Fsites%2FMARKETING-TVPSALM%2FDocumentos%20Partilhados%2FMateriais%20TVPS%2F'+encodeURIComponent(cleanProgVid)+'%2F'+encodeURIComponent(cleanEpVid)+'%2FVideo%20Editado&view=0';
+    var vidBtns = '<div style="margin-bottom:16px">' +
+      '<div style="background:linear-gradient(135deg,#eef2ff,#e4ecff);border:1px solid rgba(77,127,255,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px">' +
+        '<div style="font-size:12px;font-weight:600;color:var(--tvps-bright);margin-bottom:4px">📁 Pasta no SharePoint</div>' +
+        '<div style="font-family:IBM Plex Mono,monospace;font-size:10px;color:var(--mu);margin-bottom:10px">Materiais TVPS / '+cleanProgVid+' / '+cleanEpVid+' / Video Editado</div>' +
+        '<a href="'+spFolderUrlVid+'" target="_blank" class="btn-p" style="padding:8px 18px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:6px">📂 Abrir pasta no SharePoint</a>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+        '<button class="btn-p" style="padding:7px 16px;font-size:12px" onclick="addVideoEditado('+progIdx+','+epNum+')">＋ Adicionar link</button>' +
+      '</div></div>';
     vidEl.innerHTML = vidBtns +
     (data.videoEditado.length===0
       ? '<div style="text-align:center;padding:32px;color:var(--mu);font-size:13px;font-style:italic;background:var(--s2);border-radius:10px">Nenhum vídeo editado cadastrado</div>'
@@ -2128,9 +2137,19 @@ function renderDetData(progIdx, epNum){
   // ARQUIVOS BRUTOS
   const brutEl = document.getElementById('det-content-brutos');
   if(brutEl){
-    var brutBtns = '<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px">' +
-      '<button class="btn-p" style="padding:7px 16px;font-size:12px;background:linear-gradient(135deg,#16a34a,#15803d)" onclick="openUploadBruto('+progIdx+','+epNum+')">⬆ Upload</button>' +
-      '<button class="btn-p" style="padding:7px 16px;font-size:12px" onclick="addBruto('+progIdx+','+epNum+')">＋ Link</button></div>';
+    var epDataBrut = getEpData(progIdx, epNum);
+    var cleanProgBrut = allProgs[progIdx].n.replace(/[#%*:<>?\/\\|]/g,'');
+    var cleanEpBrut = ('Ep'+String(epNum).padStart(2,'0')+(epDataBrut.convidado?'_'+epDataBrut.convidado:'')).replace(/[#%*:<>?\/\\|]/g,'_');
+    var spFolderUrlBrut = 'https://seguradoraalm.sharepoint.com/sites/MARKETING-TVPSALM/_layouts/15/onedrive.aspx?id=%2Fsites%2FMARKETING-TVPSALM%2FDocumentos%20Partilhados%2FMateriais%20TVPS%2F'+encodeURIComponent(cleanProgBrut)+'%2F'+encodeURIComponent(cleanEpBrut)+'%2FArquivos%20Brutos&view=0';
+    var brutBtns = '<div style="margin-bottom:16px">' +
+      '<div style="background:linear-gradient(135deg,#eef2ff,#e4ecff);border:1px solid rgba(77,127,255,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px">' +
+        '<div style="font-size:12px;font-weight:600;color:var(--tvps-bright);margin-bottom:4px">📁 Pasta no SharePoint</div>' +
+        '<div style="font-family:IBM Plex Mono,monospace;font-size:10px;color:var(--mu);margin-bottom:10px">Materiais TVPS / '+cleanProgBrut+' / '+cleanEpBrut+' / Arquivos Brutos</div>' +
+        '<a href="'+spFolderUrlBrut+'" target="_blank" class="btn-p" style="padding:8px 18px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:6px">📂 Abrir pasta no SharePoint</a>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+        '<button class="btn-p" style="padding:7px 16px;font-size:12px" onclick="addBruto('+progIdx+','+epNum+')">＋ Adicionar link</button>' +
+      '</div></div>';
     brutEl.innerHTML = brutBtns +
     (data.brutos.length===0
       ? '<div style="text-align:center;padding:32px;color:var(--mu);font-size:13px;font-style:italic;background:var(--s2);border-radius:10px">Nenhum arquivo bruto cadastrado</div>'
@@ -2140,20 +2159,26 @@ function renderDetData(progIdx, epNum){
   // AUTORIZAÇÕES
   const autEl = document.getElementById('det-content-autorizacao');
   if(autEl){
-    autEl.innerHTML = `<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn-p" style="padding:7px 16px;font-size:12px" onclick="addAutorizacao(${progIdx},${epNum})">＋ Adicionar</button></div>` +
-    (data.autorizacoes.length===0
-      ? '<div style="text-align:center;padding:32px;color:var(--mu);font-size:13px;font-style:italic;background:var(--s2);border-radius:10px">Nenhuma autorização cadastrada</div>'
-      : data.autorizacoes.map((a,j)=>`
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--s2);border-radius:10px;margin-bottom:8px;border-left:3px solid #22c55e">
-          <div>
-            <div style="font-size:13px;font-weight:700;color:var(--tvps-deep)">👤 ${a.nome}</div>
-            <div style="font-size:11px;color:var(--mu);margin-top:3px">${a.tipo} · ${a.data}${a.obs?' · '+a.obs:''}</div>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <span style="font-size:10px;padding:3px 10px;border-radius:99px;background:#dcfce7;color:#15803d;font-weight:600">✓ Autorizado</span>
-            <button onclick="removeAutorizacao(${progIdx},${epNum},${j})" style="background:var(--rb);border:none;color:var(--rn);border-radius:6px;padding:4px 9px;cursor:pointer;font-size:12px">✕</button>
-          </div>
-        </div>`).join(''));
+    autEl.innerHTML = 
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px">' +
+        '<button class="btn-p" style="padding:7px 16px;font-size:12px;background:linear-gradient(135deg,#16a34a,#15803d)" onclick="openUploadAutorizacao('+progIdx+','+epNum+')">⬆ Upload PDF/Imagem</button>' +
+        '<button class="btn-p" style="padding:7px 16px;font-size:12px" onclick="addAutorizacao('+progIdx+','+epNum+')">＋ Cadastrar</button>' +
+      '</div>' +
+      (data.autorizacoes.length===0
+        ? '<div style="text-align:center;padding:32px;color:var(--mu);font-size:13px;font-style:italic;background:var(--s2);border-radius:10px">Nenhuma autorização cadastrada</div>'
+        : data.autorizacoes.map(function(a,j){
+            return '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--s2);border-radius:10px;margin-bottom:8px;border-left:3px solid #22c55e">' +
+              '<div>' +
+                '<div style="font-size:13px;font-weight:700;color:var(--tvps-deep)">👤 '+a.nome+'</div>' +
+                '<div style="font-size:11px;color:var(--mu);margin-top:3px">'+a.tipo+' · '+a.data+(a.obs?' · '+a.obs:'')+'</div>' +
+                (a.link?'<a href="'+a.link+'" target="_blank" style="font-size:11px;color:var(--tvps-glow);margin-top:4px;display:inline-block">📎 Ver arquivo ↗</a>':'') +
+              '</div>' +
+              '<div style="display:flex;gap:8px;align-items:center">' +
+                '<span style="font-size:10px;padding:3px 10px;border-radius:99px;background:#dcfce7;color:#15803d;font-weight:600">✓ Autorizado</span>' +
+                '<button onclick="removeAutorizacao('+progIdx+','+epNum+','+j+')" style="background:var(--rb);border:none;color:var(--rn);border-radius:6px;padding:4px 9px;cursor:pointer;font-size:12px">✕</button>' +
+              '</div>' +
+            '</div>';
+          }).join(''));
   }
 
   // FOTOS handled above
@@ -2266,6 +2291,7 @@ function removeFoto(pi,en,j){ if(!confirm('Remover?')) return; const d=getEpData
 function openUploadFoto(pi,en){ openUploadModal(pi,en); setTimeout(function(){ document.getElementById('up-type').value='foto'; updateUploadPathPreview(); },50); }
 function openUploadVid(pi,en){ openUploadModal(pi,en); setTimeout(function(){ document.getElementById('up-type').value='video_editado'; updateUploadPathPreview(); },50); }
 function openUploadBruto(pi,en){ openUploadModal(pi,en); setTimeout(function(){ document.getElementById('up-type').value='bruto'; updateUploadPathPreview(); },50); }
+function openUploadAutorizacao(pi,en){ openUploadModal(pi,en); setTimeout(function(){ document.getElementById('up-type').value='autorizacao'; updateUploadPathPreview(); },50); }
 function addVideoEditado(pi,en){ var nome=prompt('Nome do arquivo:'); if(!nome) return; var link=prompt('Link (SharePoint, OneDrive, etc):'); if(!link) return; var d=getEpData(pi,en); if(!d.videoEditado) d.videoEditado=[]; d.videoEditado.push({nome,link}); saveEpData(pi,en,d); renderDetData(pi,en); }
 function removeVideoEditado(pi,en,j){ if(!confirm('Remover?')) return; var d=getEpData(pi,en); d.videoEditado.splice(j,1); saveEpData(pi,en,d); renderDetData(pi,en); }
 function addBruto(pi,en){ var nome=prompt('Nome do arquivo:'); if(!nome) return; var link=prompt('Link (SharePoint, OneDrive, etc):'); if(!link) return; var d=getEpData(pi,en); if(!d.brutos) d.brutos=[]; d.brutos.push({nome,link}); saveEpData(pi,en,d); renderDetData(pi,en); }
@@ -2626,7 +2652,7 @@ async function spUploadFile(progName, epNum, convidado, fileType, file){
   try {
     if(!msToken) await acquireToken();
     var epFolder = 'Ep' + String(epNum).padStart(2,'0') + (convidado ? '_' + convidado : '');
-    var typeFolder = fileType === 'foto' ? 'Fotos' : (fileType === 'video_editado' ? 'Video Editado' : (fileType === 'bruto' ? 'Arquivos Brutos' : 'Videos'));
+    var typeFolder = fileType === 'foto' ? 'Fotos' : (fileType === 'autorizacao' ? 'Autorizacoes' : 'Fotos');
     // Clean names for SharePoint path
     var cleanProg = progName.replace(/[#%*:<>?/\\|]/g, '');
     var cleanEp = epFolder.replace(/[#%*:<>?/\\|]/g, '_');
@@ -2691,7 +2717,7 @@ function updateUploadPathPreview(){
   var ep = document.getElementById('up-ep').value || '00';
   var convidado = document.getElementById('up-convidado').value.trim();
   var typeVal = document.getElementById('up-type').value;
-  var type = typeVal === 'foto' ? 'Fotos' : (typeVal === 'video_editado' ? 'Video Editado' : (typeVal === 'bruto' ? 'Arquivos Brutos' : 'Videos'));
+  var type = typeVal === 'foto' ? 'Fotos' : (typeVal === 'autorizacao' ? 'Autorizações' : 'Fotos');
   var epStr = 'Ep' + String(ep).padStart(2,'0') + (convidado ? '_' + convidado : '');
   var preview = document.getElementById('up-path-preview');
   if(preview) preview.textContent = 'Materiais TVPS / ' + prog + ' / ' + type + ' / ' + epStr;
@@ -2739,12 +2765,11 @@ async function doUpload(){
     var epData = getEpData(progIdx, epNum);
     if(fileType === 'foto'){
       successLinks.forEach(function(f){ epData.fotos.push({nome: f.nome, link: f.link}); });
-    } else if(fileType === 'video_editado'){
-      if(!epData.videoEditado) epData.videoEditado = [];
-      successLinks.forEach(function(f){ epData.videoEditado.push({nome: f.nome, link: f.link}); });
-    } else if(fileType === 'bruto'){
-      if(!epData.brutos) epData.brutos = [];
-      successLinks.forEach(function(f){ epData.brutos.push({nome: f.nome, link: f.link}); });
+    } else if(fileType === 'autorizacao'){
+      if(!epData.autorizacoes) epData.autorizacoes = [];
+      successLinks.forEach(function(f){ 
+        epData.autorizacoes.push({nome: f.nome, tipo: 'Imagem e Voz', data: new Date().toLocaleDateString('pt-BR'), obs: '', link: f.link}); 
+      });
     }
     saveEpData(progIdx, epNum, epData);
     statusEl.textContent = '✓ ' + successLinks.length + ' arquivo(s) enviado(s) com sucesso!';
